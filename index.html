@@ -501,6 +501,22 @@ footer{padding:40px 10%;border-top:1px solid rgba(0,255,65,.1);display:flex;just
 .port-vuln{color:#ff7800;font-size:.58rem;}
 .port-table-wrap{max-height:360px;overflow-y:auto;}
 
+
+/* TARGET module */
+.target-phase-toggle{font-family:var(--font);font-size:.62rem;color:rgba(0,255,65,.6);
+  display:flex;align-items:center;gap:5px;cursor:pointer;padding:3px 8px;
+  border:1px solid rgba(0,255,65,.15);border-radius:3px;transition:border-color .2s;}
+.target-phase-toggle:hover{border-color:rgba(0,255,65,.4);}
+.target-phase-toggle input{accent-color:var(--g);cursor:pointer;}
+.tgt-phase-header{color:var(--g);font-size:.72rem;letter-spacing:2px;margin:12px 0 4px;
+  border-bottom:1px solid rgba(0,255,65,.15);padding-bottom:4px;}
+.tgt-finding{padding:3px 0 3px 12px;border-left:2px solid rgba(0,255,65,.2);margin:2px 0;}
+.tgt-finding.critical{border-left-color:var(--red);}
+.tgt-finding.warn{border-left-color:var(--amber);}
+.tgt-finding.good{border-left-color:var(--g);}
+.tgt-summary{background:rgba(0,255,65,.04);border:1px solid rgba(0,255,65,.2);
+  border-radius:5px;padding:12px 14px;margin-top:14px;}
+
 </style>
 </head>
 <body data-v="y000-eda2c79f">
@@ -1060,6 +1076,7 @@ https://target.cepal.org/search?q=&lt;svg/onload=fetch('https://attacker.com?c='
   </div>
   <p style="font-size:.7rem;color:rgba(0,255,65,.3);letter-spacing:2px;margin-bottom:20px;">// Herramientas reales usando APIs p&uacute;blicas</p>
   <div class="tk-tabs">
+    <button class="tk-tab" onclick="showTk('target',this)" style="border-color:rgba(0,255,65,.4);color:rgba(0,255,65,.9);">🎯 TARGET</button>
     <button class="tk-tab active" onclick="showTk('shodan',this)">🔍 RECON</button>
     <button class="tk-tab" onclick="showTk('threat',this)">☣ THREAT INTEL</button>
     <button class="tk-tab" onclick="showTk('cvss',this)">⚡ CVSS</button>
@@ -1072,6 +1089,8 @@ https://target.cepal.org/search?q=&lt;svg/onload=fetch('https://attacker.com?c='
     <button class="tk-tab" onclick="showTk('headers2',this)">🛡 HEADERS</button>
     <button class="tk-tab" onclick="showTk('cidr',this)">📐 CIDR</button>
     <button class="tk-tab" onclick="showTk('dorks',this)">🔎 DORKS</button>
+    <button class="tk-tab" onclick="showTk('cvedb',this)">🛑 CVE DB</button>
+    <button class="tk-tab" onclick="showTk('bb',this)">🏆 BUG BOUNTY</button>
   </div>
 
       <div class="tk-panel active" id="tk-shodan">
@@ -1080,7 +1099,7 @@ https://target.cepal.org/search?q=&lt;svg/onload=fetch('https://attacker.com?c='
       <span style="color:rgba(0,255,65,.3)"> // todo gratis, sin API key</span>
     </div>
     <div class="tk-row">
-      <input class="tk-input" id="recon-target" placeholder="example.com  ó  8.8.8.8" style="flex:3;font-size:.85rem;"/>
+      <input class="tk-input" id="recon-target" placeholder="queretaro.gob.mx  ó  8.8.8.8" style="flex:3;font-size:.85rem;"/>
       <button class="tk-btn" onclick="tkRecon()" style="min-width:120px;font-size:.8rem;letter-spacing:2px;">▶ RECON</button>
     </div>
     <div class="tk-row" style="gap:6px;flex-wrap:wrap;margin-top:4px;">
@@ -1115,7 +1134,7 @@ https://target.cepal.org/search?q=&lt;svg/onload=fetch('https://attacker.com?c='
       <span id="th-bulk-label" style="font-family:var(--font);font-size:.6rem;color:rgba(0,255,65,.3);margin-left:8px;"></span>
     </div>
     <div id="th-bulk-area" style="display:none;margin-bottom:6px;">
-      <textarea id="th-bulk-input" placeholder="Una IP, dominio, URL o hash por línea&#10;189.141.173.187&#10;https://example.com"
+      <textarea id="th-bulk-input" placeholder="Una IP, dominio, URL o hash por línea&#10;189.141.173.187&#10;queretaro.gob.mx&#10;https://example.com"
         style="width:100%;height:90px;background:var(--bg);border:1px solid rgba(0,255,65,.2);color:rgba(0,255,65,.8);
                font-family:var(--font);font-size:.7rem;padding:8px;resize:vertical;border-radius:4px;outline:none;"></textarea>
       <button class="tk-btn" onclick="runBulkScan()" style="margin-top:4px;font-size:.75rem;width:100%;">&#x2B21; EJECUTAR BULK SCAN</button>
@@ -1538,6 +1557,74 @@ https://target.cepal.org/search?q=&lt;svg/onload=fetch('https://attacker.com?c='
     </div>
 
     <div class="tk-output show" id="out-dorks" style="min-height:260px;"></div>
+  </div>
+
+
+  <div class="tk-panel" id="tk-target">
+    <div class="tk-desc">Target Recon &mdash; <span style="color:var(--g)">orquestador completo de reconocimiento</span>
+      <span style="color:rgba(0,255,65,.3)"> // OSINT · infraestructura · superficie de ataque · threat intel</span></div>
+
+    <div class="tk-row" style="gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+      <input class="tk-input" id="target-domain" placeholder="target.com  o  1.2.3.4"
+        style="flex:3;font-size:.9rem;font-weight:600;" onkeydown="if(event.key==='Enter')runTarget()"/>
+      <button class="tk-btn" onclick="runTarget()" id="target-run-btn"
+        style="min-width:120px;font-size:.82rem;font-weight:700;letter-spacing:1px;">🎯 EJECUTAR</button>
+      <button class="tk-btn sec" onclick="targetClear()" style="font-size:.72rem;">✕</button>
+    </div>
+
+    <!-- Phase toggles -->
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;" id="target-phases">
+      <label class="target-phase-toggle">
+        <input type="checkbox" id="tph-resolve" checked> <span>1 · Resolución</span></label>
+      <label class="target-phase-toggle">
+        <input type="checkbox" id="tph-infra" checked> <span>2 · Infraestructura</span></label>
+      <label class="target-phase-toggle">
+        <input type="checkbox" id="tph-surface" checked> <span>3 · Superficie</span></label>
+      <label class="target-phase-toggle">
+        <input type="checkbox" id="tph-threat" checked> <span>4 · Threat Intel</span></label>
+      <label class="target-phase-toggle">
+        <input type="checkbox" id="tph-osint" checked> <span>5 · OSINT</span></label>
+      <button class="port-cat-btn" style="font-size:.58rem;padding:2px 7px;"
+        onclick="targetExport()" title="Generar reporte PDF profesional" style="background:rgba(0,255,65,.1);border-color:rgba(0,255,65,.5);color:rgba(0,255,65,.9);">📄 PDF Report</button>
+    </div>
+
+    <!-- Progress bar -->
+    <div id="target-progress" style="display:none;margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+        <span id="target-phase-label" style="font-family:var(--font);font-size:.65rem;color:rgba(0,255,65,.6);"></span>
+        <span id="target-pct" style="font-family:var(--font);font-size:.65rem;color:rgba(0,255,65,.4);"></span>
+      </div>
+      <div style="height:3px;background:rgba(0,255,65,.1);border-radius:2px;">
+        <div id="target-bar" style="height:100%;background:var(--g);border-radius:2px;width:0%;transition:width .4s;"></div>
+      </div>
+    </div>
+
+    <div class="tk-output show" id="out-target" style="min-height:300px;font-size:.68rem;"></div>
+  </div>
+
+
+  <div class="tk-panel" id="tk-cvedb">
+    <div class="tk-desc">CVE Search &mdash; <span style="color:var(--g)">busca por tecnología · CVSS score · CIRCL + NVD</span>
+      <span style="color:rgba(0,255,65,.3)"> // sin API key</span></div>
+    <div class="tk-row" style="gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+      <input class="tk-input" id="cve-query" placeholder="apache 2.4  o  CVE-2024-38476  o  php 8.1"
+        style="flex:3;font-size:.82rem;" onkeydown="if(event.key==='Enter')searchCVE()"/>
+      <button class="tk-btn" onclick="searchCVE()" style="min-width:100px;font-size:.78rem;">🛑 BUSCAR</button>
+    </div>
+    <div class="tk-note" id="cve-note">// Busca CVEs por tecnología/versión o por ID directo</div>
+    <div class="tk-output" id="out-cvedb" style="min-height:240px;"></div>
+  </div>
+
+  <div class="tk-panel" id="tk-bb">
+    <div class="tk-desc">Bug Bounty Scope &mdash; <span style="color:var(--g)">HackerOne · Bugcrowd · Intigriti</span>
+      <span style="color:rgba(0,255,65,.3)"> // verifica si el dominio está en scope</span></div>
+    <div class="tk-row" style="gap:8px;margin-bottom:8px;">
+      <input class="tk-input" id="bb-domain" placeholder="target.com"
+        style="flex:3;font-size:.82rem;" onkeydown="if(event.key==='Enter')checkBugBounty()"/>
+      <button class="tk-btn" onclick="checkBugBounty()" style="min-width:100px;font-size:.78rem;">🏆 VERIFICAR</button>
+    </div>
+    <div class="tk-note" id="bb-note">// Busca si el dominio tiene programa de bug bounty activo</div>
+    <div class="tk-output" id="out-bb" style="min-height:240px;"></div>
   </div>
 
 </section>
@@ -5410,6 +5497,1159 @@ function dorkExport(){
   a.href=URL.createObjectURL(new Blob([txt],{type:'text/plain'}));
   a.download='dorks_'+domain.replace(/\./g,'_')+'_'+Date.now()+'.txt';
   a.click();
+}
+
+
+// ══════════════════════════════════════════════════════════════
+//  🎯 TARGET — RECON ORCHESTRATOR
+// ══════════════════════════════════════════════════════════════
+var _targetData = {};  // accumulated findings
+var _targetLog  = [];  // plain text log for export
+
+function tgtOut(html, plain){
+  var o=document.getElementById('out-target');
+  if(o){o.innerHTML+=html;o.scrollTop=o.scrollHeight;}
+  if(plain) _targetLog.push(plain);
+}
+
+function tgtSection(num, title, icon){
+  var h='<div class="tgt-phase-header">'+icon+' FASE '+num+' — '+escH(title)+'</div>';
+  tgtOut(h, '\n══ FASE '+num+' — '+title+' ══');
+}
+
+function tgtRow(label, val, cls){
+  cls=cls||'';
+  tgtOut('<div class="tgt-finding '+cls+'">'+
+    '<span style="color:rgba(0,255,65,.4);font-size:.6rem;">'+escH(label.padEnd(14))+'</span> '+
+    '<span style="color:rgba(0,255,65,.85);">'+val+'</span></div>',
+    label+': '+val.replace(/<[^>]+>/g,''));
+}
+
+function tgtWarn(msg){
+  tgtOut('<div class="tgt-finding warn">⚠ <span style="color:var(--amber)">'+msg+'</span></div>',
+    '⚠ '+msg.replace(/<[^>]+>/g,''));
+  _targetData.warnings=(_targetData.warnings||[]);
+  _targetData.warnings.push(msg.replace(/<[^>]+>/g,''));
+}
+
+function tgtCrit(msg){
+  tgtOut('<div class="tgt-finding critical">🚨 <span style="color:var(--red)">'+msg+'</span></div>',
+    '🚨 '+msg.replace(/<[^>]+>/g,''));
+  _targetData.criticals=(_targetData.criticals||[]);
+  _targetData.criticals.push(msg.replace(/<[^>]+>/g,''));
+}
+
+function tgtGood(msg){
+  tgtOut('<div class="tgt-finding good">✓ <span style="color:rgba(0,255,65,.7)">'+msg+'</span></div>',
+    '✓ '+msg.replace(/<[^>]+>/g,''));
+}
+
+function tgtLink(label, url){
+  tgtOut('  <a href="'+escH(url)+'" target="_blank" style="color:rgba(0,255,65,.45);font-size:.62rem;margin-right:8px;">→ '+escH(label)+' ↗</a>',
+    '→ '+label+': '+url);
+}
+
+function tgtProgress(pct, label){
+  var bar=document.getElementById('target-bar');
+  var lbl=document.getElementById('target-phase-label');
+  var pctEl=document.getElementById('target-pct');
+  if(bar) bar.style.width=pct+'%';
+  if(lbl) lbl.textContent=label;
+  if(pctEl) pctEl.textContent=Math.round(pct)+'%';
+}
+
+function targetClear(){
+  var o=document.getElementById('out-target');
+  if(o){o.innerHTML='';}
+  _targetData={};_targetLog=[];
+  var prog=document.getElementById('target-progress');
+  if(prog) prog.style.display='none';
+  var btn=document.getElementById('target-run-btn');
+  if(btn){btn.disabled=false;btn.textContent='🎯 EJECUTAR';}
+}
+
+function ph(id){
+  var el=document.getElementById('tph-'+id);
+  return el?el.checked:true;
+}
+
+async function runTarget(){
+  var raw=(document.getElementById('target-domain')||{value:''}).value.trim();
+  if(!raw){tgtOut('<span style="color:var(--red)">// Ingresa un dominio o IP</span>');return;}
+
+  // Clean input
+  var domain=raw.replace(/^https?:\/\//,'').replace(/\/.*$/,'').trim();
+  var isIP=/^[\d.]+$/.test(domain)||/^[a-f0-9:]+$/i.test(domain);
+
+  targetClear();
+  _targetData={domain:domain, isIP:isIP, ips:[], subs:[], ports:[], cves:[], score:0};
+  _targetLog=['🎯 TARGET RECON REPORT','Domain: '+domain,'Date: '+new Date().toISOString(),''];
+
+  var btn=document.getElementById('target-run-btn');
+  if(btn){btn.disabled=true;btn.textContent='⏳ Ejecutando...';}
+  document.getElementById('target-progress').style.display='block';
+
+  // Banner
+  tgtOut(
+    '<div style="font-family:var(--font);color:var(--g);font-size:.75rem;margin-bottom:8px;">'+
+    '╔══════════════════════════════════════════════╗\n'+
+    '║  🎯 TARGET: <span style="color:rgba(0,255,65,.9)">'+escH(domain.padEnd(33))+'</span> ║\n'+
+    '╚══════════════════════════════════════════════╝</div>',
+    '🎯 TARGET: '+domain
+  );
+
+  var totalPhases=5;
+  var donePh=0;
+
+  // ──────────────────────────────────────────────
+  // FASE 1 — RESOLUCIÓN
+  // ──────────────────────────────────────────────
+  if(ph('resolve')){
+    tgtSection(1,'RESOLUCIÓN','🔍');
+    tgtProgress(5,'Fase 1 · Resolución DNS...');
+    try{
+      if(!isIP){
+        // A records
+        var dr=await fetch('https://dns.google/resolve?name='+encodeURIComponent(domain)+'&type=A',
+          {signal:AbortSignal.timeout(7000)});
+        var dd=await dr.json();
+        var ips=(dd.Answer||[]).filter(function(a){return a.type===1;}).map(function(a){return a.data;});
+        _targetData.ips=ips;
+        if(ips.length){
+          tgtRow('IPs (A)','<span style="color:var(--cyan)">'+escH(ips.join(', '))+'</span>');
+        } else {
+          tgtWarn('Sin registros A — dominio sin IPv4 o NXDOMAIN');
+        }
+        // AAAA
+        var dr6=await fetch('https://dns.google/resolve?name='+encodeURIComponent(domain)+'&type=AAAA',
+          {signal:AbortSignal.timeout(5000)});
+        var dd6=await dr6.json();
+        var ips6=(dd6.Answer||[]).filter(function(a){return a.type===28;}).map(function(a){return a.data;});
+        if(ips6.length){_targetData.ips6=ips6;tgtRow('IPs (AAAA)',escH(ips6.slice(0,3).join(', ')));}
+        // MX
+        var dmx=await fetch('https://dns.google/resolve?name='+encodeURIComponent(domain)+'&type=MX',
+          {signal:AbortSignal.timeout(5000)});
+        var dmxd=await dmx.json();
+        var mxs=(dmxd.Answer||[]).filter(function(a){return a.type===15;}).map(function(a){return a.data;});
+        if(mxs.length){_targetData.mx=mxs;tgtRow('MX',escH(mxs.slice(0,3).join(' | ')));}
+        // TXT (SPF/DKIM/DMARC)
+        var dtxt=await fetch('https://dns.google/resolve?name='+encodeURIComponent(domain)+'&type=TXT',
+          {signal:AbortSignal.timeout(5000)});
+        var dtxtd=await dtxt.json();
+        var txts=(dtxtd.Answer||[]).filter(function(a){return a.type===16;}).map(function(a){return a.data;});
+        var spf=txts.find(function(t){return t.indexOf('v=spf1')>=0;});
+        var dmarc_r=await fetch('https://dns.google/resolve?name=_dmarc.'+encodeURIComponent(domain)+'&type=TXT',
+          {signal:AbortSignal.timeout(5000)}).catch(function(){return null;});
+        var dmarc='';
+        if(dmarc_r&&dmarc_r.ok){
+          var dmarc_d=await dmarc_r.json();
+          var dmarc_recs=(dmarc_d.Answer||[]).filter(function(a){return a.type===16;});
+          if(dmarc_recs.length) dmarc=dmarc_recs[0].data;
+        }
+        if(spf){_targetData.spf=spf;tgtRow('SPF',escH(spf.substring(0,70)));}
+        else tgtWarn('Sin SPF — dominio vulnerable a email spoofing');
+        if(dmarc){_targetData.dmarc=dmarc;tgtRow('DMARC',escH(dmarc.substring(0,70)));}
+        else tgtWarn('Sin DMARC — emails pueden ser falsificados');
+        // NS
+        var dns_ns=await fetch('https://dns.google/resolve?name='+encodeURIComponent(domain)+'&type=NS',
+          {signal:AbortSignal.timeout(5000)});
+        var dns_nsd=await dns_ns.json();
+        var nss=(dns_nsd.Answer||[]).filter(function(a){return a.type===2;}).map(function(a){return a.data;});
+        if(nss.length){_targetData.ns=nss;tgtRow('Nameservers',escH(nss.slice(0,4).join(', ')));}
+      } else {
+        _targetData.ips=[domain];
+        tgtRow('IP target','<span style="color:var(--cyan)">'+escH(domain)+'</span>');
+        // PTR
+        var parts=domain.split('.').reverse();
+        var ptrDomain=parts.join('.')+'.in-addr.arpa';
+        var ptr_r=await fetch('https://dns.google/resolve?name='+encodeURIComponent(ptrDomain)+'&type=PTR',
+          {signal:AbortSignal.timeout(5000)}).catch(function(){return null;});
+        if(ptr_r&&ptr_r.ok){
+          var ptr_d=await ptr_r.json();
+          var ptrs=(ptr_d.Answer||[]).filter(function(a){return a.type===12;}).map(function(a){return a.data;});
+          if(ptrs.length) tgtRow('PTR',escH(ptrs[0]));
+        }
+      }
+    }catch(e){tgtOut('<span style="color:rgba(255,60,60,.5)">// Fase 1 error: '+escH(e.message)+'</span>\n');}
+    donePh++;
+  }
+
+  // ──────────────────────────────────────────────
+  // FASE 2 — INFRAESTRUCTURA
+  // ──────────────────────────────────────────────
+  if(ph('infra')&&_targetData.ips.length>0){
+    tgtSection(2,'INFRAESTRUCTURA','🏗');
+    var ip=_targetData.ips[0];
+    tgtProgress(20,'Fase 2 · Infraestructura...');
+    // GEO + ASN
+    try{
+      var gr=await fetch('https://ipapi.co/'+encodeURIComponent(ip)+'/json/',{signal:AbortSignal.timeout(8000)});
+      var gd=await gr.json();
+      if(!gd.error){
+        _targetData.asn=gd.asn;
+        _targetData.org=gd.org;
+        _targetData.country=gd.country_name;
+        tgtRow('ASN','<span style="color:var(--cyan)">'+escH(gd.asn||'—')+'</span>  '+escH(gd.org||''));
+        tgtRow('Ubicación',escH((gd.country_name||'—')+' · '+(gd.city||'')+(gd.region?', '+gd.region:'')));
+        tgtRow('Red',escH(gd.network||'—'));
+        if(gd.asn){
+          var asn=gd.asn.replace('AS','');
+          tgtOut('  ');
+          tgtLink('bgp.tools','https://bgp.tools/as/'+asn);
+          tgtLink('ipinfo.io','https://ipinfo.io/AS'+asn);
+          tgtOut('\n','');
+        }
+      }
+    }catch(e){}
+    // WHOIS
+    try{
+      tgtProgress(28,'Fase 2 · WHOIS...');
+      var wr=await fetch('https://who-dat.as93.net/'+encodeURIComponent(isIP?domain:domain),
+        {signal:AbortSignal.timeout(10000)});
+      if(wr.ok){
+        var wd=await wr.json();
+        if(!wd.error){
+          var dates=wd.important_dates||{};
+          var reg=wd.registrar||{};
+          if(reg.name){_targetData.registrar=reg.name;tgtRow('Registrar',escH(reg.name));}
+          _targetData.whoisDates=dates;
+          if(dates.created) tgtRow('Creado',escH(dates.created));
+          if(dates.expiry){
+            var exp=new Date(dates.expiry);
+            var daysLeft=Math.floor((exp-new Date())/86400000);
+            _targetData.domainExpiry=daysLeft;
+            var col=daysLeft<30?'var(--red)':daysLeft<90?'var(--amber)':'rgba(0,255,65,.7)';
+            tgtRow('Expira','<span style="color:'+col+'">'+escH(dates.expiry)+' ('+daysLeft+' días)</span>');
+            if(daysLeft<30) tgtCrit('Dominio expira en '+daysLeft+' días');
+          }
+          var ns=wd.name_servers||[];
+          if(ns.length) tgtRow('Nameservers',escH(ns.slice(0,3).join(', ')));
+        }
+      }
+    }catch(e){}
+    donePh++;
+  }
+
+  // ──────────────────────────────────────────────
+  // FASE 3 — SUPERFICIE DE ATAQUE
+  // ──────────────────────────────────────────────
+  if(ph('surface')){
+    tgtSection(3,'SUPERFICIE DE ATAQUE','⚔');
+    var ip3=(_targetData.ips&&_targetData.ips[0])||domain;
+
+    // Ports + CVEs (Shodan InternetDB)
+    if(!isIP||ip3){
+      try{
+        tgtProgress(38,'Fase 3 · Shodan InternetDB...');
+        var sr=await fetch('https://internetdb.shodan.io/'+encodeURIComponent(ip3),
+          {signal:AbortSignal.timeout(8000)});
+        var sd=await sr.json();
+        if(sd.ports&&sd.ports.length){
+          _targetData.ports=sd.ports;
+          tgtRow('Puertos','<span style="color:rgba(0,255,65,.8)">'+escH(sd.ports.join(', '))+'</span>');
+          // Flag interesting ports
+          var dangerPorts={22:'SSH',23:'Telnet',3389:'RDP',5900:'VNC',6379:'Redis',
+            27017:'MongoDB',9200:'Elasticsearch',2375:'Docker',5432:'PostgreSQL',3306:'MySQL'};
+          sd.ports.forEach(function(p){
+            if(dangerPorts[p]) tgtWarn('Puerto '+p+' ('+dangerPorts[p]+') expuesto públicamente');
+          });
+        }
+        if(sd.vulns&&sd.vulns.length){
+          _targetData.cves=sd.vulns;
+          tgtCrit(sd.vulns.length+' CVEs conocidos: '+sd.vulns.slice(0,5).join(', ')+(sd.vulns.length>5?' ...':''));
+          // Enrich top 5 CVEs with CVSS from CIRCL
+          try{
+            var topCVEs=sd.vulns.slice(0,5);
+            var cveDetails=await Promise.allSettled(topCVEs.map(function(cid){
+              return fetch('https://cve.circl.lu/api/cve/'+encodeURIComponent(cid),
+                {signal:AbortSignal.timeout(6000)}).then(function(r){return r.json();});
+            }));
+            var enriched=[];
+            cveDetails.forEach(function(r){
+              if(r.status==='fulfilled'&&r.value&&r.value.id){
+                enriched.push(r.value);
+              }
+            });
+            if(enriched.length){
+              _targetData.cveDetails=enriched;
+              enriched.forEach(function(cve){
+                var score=cve.cvss3||cve.cvss||0;
+                var col=cvssColor(score);
+                var lbl=cvssLabel(score);
+                tgtOut('<div style="padding:2px 0 2px 28px;font-family:var(--font);font-size:.62rem;">'+
+                  '<span style="color:'+col+';font-weight:700;">'+escH(String(score))+'</span>'+
+                  '<span style="color:'+col+';font-size:.58rem;margin:0 6px;">'+lbl+'</span>'+
+                  '<span style="color:var(--cyan);">'+escH(cve.id)+'</span>'+
+                  '<span style="color:rgba(0,255,65,.5);margin-left:8px;">'+escH((cve.summary||'').substring(0,60))+'</span>'+
+                  '</div>','');
+              });
+            }
+          }catch(e){}
+        }
+        if(sd.hostnames&&sd.hostnames.length){
+          tgtRow('Hostnames',escH(sd.hostnames.slice(0,5).join(', ')));
+        }
+        tgtLink('Shodan','https://www.shodan.io/host/'+ip3);
+        tgtOut('\n','');
+      }catch(e){}
+    }
+
+    if(!isIP){
+      // Subdominios via crt.sh
+      try{
+        tgtProgress(46,'Fase 3 · Subdominios (crt.sh)...');
+        var cr=await fetch('https://crt.sh/?q=%.'+encodeURIComponent(domain)+'&output=json',
+          {signal:AbortSignal.timeout(15000)});
+        if(cr.ok){
+          var cd=await cr.json();
+          var seen={};
+          var subs=[];
+          (cd||[]).forEach(function(e){
+            (e.name_value||'').split('\n').forEach(function(n){
+              n=n.trim().toLowerCase();
+              if(n&&!seen[n]&&n.endsWith('.'+domain)){seen[n]=true;subs.push(n);}
+            });
+          });
+          _targetData.subs=subs;
+          tgtRow('Subdominios','<span style="color:var(--cyan)">'+subs.length+' encontrados</span>');
+          // Highlight interesting ones
+          var interestingSubs=subs.filter(function(s){
+            return /dev\.|staging\.|test\.|admin\.|api\.|internal\.|vpn\.|ftp\.|mail\.|jenkins\.|gitlab\.|jira\./.test(s);
+          });
+          if(interestingSubs.length){
+            tgtWarn('Subdominios sensibles: '+interestingSubs.slice(0,5).join(', '));
+          }
+          // Show top 8
+          if(subs.length){
+            tgtOut('<div style="padding-left:14px;color:rgba(0,255,65,.5);font-size:.62rem;">'+
+              subs.slice(0,8).map(function(s){return escH(s);}).join('<br>')+
+              (subs.length>8?'<br><span style="color:rgba(0,255,65,.3)">... y '+(subs.length-8)+' más</span>':'')+
+              '</div>\n','');
+          }
+        }
+      }catch(e){}
+
+      // SSL cert
+      try{
+        tgtProgress(56,'Fase 3 · SSL cert...');
+        var ssl_r=await fetch('https://crt.sh/?q='+encodeURIComponent(domain)+'&output=json',
+          {signal:AbortSignal.timeout(10000)});
+        if(ssl_r.ok){
+          var ssl_d=await ssl_r.json();
+          if(ssl_d&&ssl_d.length){
+            ssl_d.sort(function(a,b){return new Date(b.entry_timestamp)-new Date(a.entry_timestamp);});
+            var cert=ssl_d[0];
+            var notAfter=cert.not_after?new Date(cert.not_after):null;
+            var daysSSL=notAfter?Math.floor((notAfter-new Date())/86400000):null;
+            var sslCol=!notAfter?'var(--amber)':daysSSL<0?'var(--red)':daysSSL<30?'var(--amber)':'rgba(0,255,65,.7)';
+            _targetData.sslCN=cert.common_name||'';
+            _targetData.sslIssuer=cert.issuer_name||'';
+            _targetData.sslNotAfter=cert.not_after||'';
+            _targetData.sslNotBefore=cert.not_before||'';
+            var sans=(cert.name_value||'').split('\n').filter(function(s){return s.trim();});
+            _targetData.sslSANs=[...new Set(sans)].slice(0,20);
+            _targetData.sslTotal=ssl_d.length;
+            tgtRow('SSL CN',escH(cert.common_name||'—'));
+            tgtRow('SSL Issuer',escH((cert.issuer_name||'—').substring(0,50)));
+            tgtRow('SSL Expira','<span style="color:'+sslCol+'">'+escH(cert.not_after||'—')+(daysSSL!==null?' ('+daysSSL+' días)':'')+'</span>');
+            if(daysSSL!==null&&daysSSL<0) tgtCrit('Certificado SSL EXPIRADO');
+            else if(daysSSL!==null&&daysSSL<30) tgtWarn('Certificado SSL expira en '+daysSSL+' días');
+            _targetData.sslDays=daysSSL;
+          }
+        }
+      }catch(e){}
+    }
+    // Subdomain takeover detection (up to 50 subs)
+    if(_targetData.subs&&_targetData.subs.length>0){
+      tgtProgress(62,'Fase 3 · Takeover detection ('+Math.min(_targetData.subs.length,50)+' subs)...');
+      try{
+        var tkRes=await checkSubdomainTakeover(_targetData.subs, domain);
+        _targetData.subsActive=tkRes.active;
+        _targetData.subsDead=tkRes.dead;
+        _targetData.takeover=tkRes.takeover;
+        tgtRow('Subs activos','<span style="color:var(--g)">'+tkRes.active.length+'</span>  <span style="color:rgba(0,255,65,.4)">de '+_targetData.subs.length+' totales</span>');
+        if(tkRes.dead.length) tgtRow('Subs inactivos','<span style="color:rgba(255,180,0,.7)">'+tkRes.dead.length+'</span>');
+        if(tkRes.takeover.length){
+          tkRes.takeover.forEach(function(t){
+            tgtCrit('Subdomain Takeover potencial: '+t.sub+' → '+t.cname+' ('+t.service+')');
+          });
+        } else if(tkRes.dead.length){
+          tgtWarn(tkRes.dead.length+' subdominios inactivos — verificar takeover manualmente');
+        }
+      }catch(e){}
+    }
+
+    // Technology fingerprinting via urlscan.io
+    if(!isIP){
+      tgtProgress(65,'Fase 3 · Fingerprinting (urlscan.io)...');
+      try{
+        var techs=await fingerprint(domain);
+        _targetData.techs=techs;
+        if(techs.length){
+          tgtRow('Tecnologías','<span style="color:rgba(0,255,65,.6)">'+techs.length+' detectadas</span>');
+          techs.slice(0,6).forEach(function(t){
+            if(t.name!=='Title'&&t.name!=='HTTP Status'&&t.name!=='HTTPS Requests')
+              tgtOut('<div style="padding:1px 0 1px 28px;font-family:var(--font);font-size:.63rem;">'+
+                '<span style="color:rgba(0,255,65,.4)">'+escH(t.cat)+' </span>'+
+                '<span style="color:rgba(0,255,65,.8)">'+escH(t.name)+'</span>'+
+                (t.val?' <span style="color:rgba(0,255,65,.5)">'+escH(t.val)+'</span>':'')+
+                '</div>','');
+          });
+          if(techs._scanUrl){
+            tgtOut('\n  ','');
+            tgtLink('urlscan.io result', techs._scanUrl);
+            tgtOut('\n','');
+          }
+        } else {
+          tgtOut('<div style="padding-left:14px;font-family:var(--font);font-size:.62rem;color:rgba(0,255,65,.3);">// Sin scans recientes en urlscan.io</div>\n','');
+          tgtLink('Escanear en urlscan.io','https://urlscan.io/search/#page.domain:'+encodeURIComponent(domain));
+          tgtOut('\n','');
+        }
+      }catch(e){}
+    }
+
+    donePh++;
+  }
+
+  // ──────────────────────────────────────────────
+  // FASE 4 — THREAT INTEL
+  // ──────────────────────────────────────────────
+  if(ph('threat')&&(_targetData.ips.length>0||isIP)){
+    tgtSection(4,'THREAT INTEL','☣');
+    var ip4=(_targetData.ips&&_targetData.ips[0])||domain;
+    tgtProgress(68,'Fase 4 · Threat Intel...');
+
+    // OTX reputation
+    try{
+      var host4=isIP?ip4:domain;
+      var isIPv4=/^[\d.]+$/.test(host4);
+      var otxEp=isIPv4
+        ?'https://otx.alienvault.com/api/v1/indicators/IPv4/'+encodeURIComponent(host4)+'/general'
+        :'https://otx.alienvault.com/api/v1/indicators/domain/'+encodeURIComponent(host4)+'/general';
+      var otxR=await fetch(otxEp,{signal:AbortSignal.timeout(10000)});
+      if(otxR.ok){
+        var otxD=await otxR.json();
+        var pulses=(otxD.pulse_info&&otxD.pulse_info.count)||0;
+        if(pulses>0){
+          tgtCrit('OTX: '+pulses+' pulsos de amenaza encontrados');
+          _targetData.otxPulses=pulses;
+        } else {
+          tgtGood('OTX: Sin pulsos de amenaza');
+        }
+        if(otxD.reputation&&otxD.reputation<0){
+          tgtCrit('OTX Reputación negativa: '+otxD.reputation);
+        }
+      }
+    }catch(e){}
+
+    // Cloudflare radar (DNS-based)
+    try{
+      tgtProgress(76,'Fase 4 · Cloudflare Radar...');
+      var host4cf=isIP?domain:domain;
+      var cfMal=await fetch('https://security.cloudflare-dns.com/dns-query?name='+encodeURIComponent(host4cf)+'&type=A',
+        {headers:{'Accept':'application/dns-json'},signal:AbortSignal.timeout(6000)});
+      var cfFam=await fetch('https://family.cloudflare-dns.com/dns-query?name='+encodeURIComponent(host4cf)+'&type=A',
+        {headers:{'Accept':'application/dns-json'},signal:AbortSignal.timeout(6000)});
+      var cfMalD=await cfMal.json();
+      var cfFamD=await cfFam.json();
+      var blocked_mal=cfMalD.Authority&&cfMalD.Authority.some(function(a){return a.data&&a.data.indexOf('0.0.0.0')>=0;});
+      var no_ans_mal=!cfMalD.Answer||cfMalD.Answer.length===0;
+      var no_ans_fam=!cfFamD.Answer||cfFamD.Answer.length===0;
+      if(no_ans_mal){
+        tgtCrit('Cloudflare Security DNS: dominio bloqueado (malware/phishing)');
+        _targetData.cfBlocked=true;
+      } else {
+        tgtGood('Cloudflare Security DNS: no bloqueado');
+      }
+      if(no_ans_fam&&!no_ans_mal){
+        tgtWarn('Cloudflare Family DNS: bloqueado (contenido adulto/categorizado)');
+      }
+    }catch(e){}
+
+    // Spamhaus via DNS
+    try{
+      if(!isIP&&_targetData.ips.length){
+        tgtProgress(82,'Fase 4 · Spamhaus...');
+        var ipParts=(_targetData.ips[0]||'').split('.').reverse().join('.');
+        var spam_r=await fetch('https://dns.google/resolve?name='+encodeURIComponent(ipParts+'.zen.spamhaus.org')+'&type=A',
+          {signal:AbortSignal.timeout(6000)});
+        var spam_d=await spam_r.json();
+        var spamAns=(spam_d.Answer||[]).filter(function(a){return a.type===1;});
+        if(spamAns.length){
+          tgtCrit('Spamhaus ZEN: IP en lista negra ('+spamAns.map(function(a){return a.data;}).join(', ')+')');
+          _targetData.spamhaus=true;
+        } else {
+          tgtGood('Spamhaus ZEN: IP no listada');
+        }
+      }
+    }catch(e){}
+
+    // Security headers check (lightweight — just grade from Observatory)
+    if(!isIP){
+      try{
+        tgtProgress(85,'Fase 4 · Security Headers...');
+        var obsUrl='https://observatory-api.mdn.mozilla.net/api/v2/scan?host='+encodeURIComponent(domain);
+        await fetch(obsUrl,{method:'POST',signal:AbortSignal.timeout(5000)}).catch(function(){});
+        await new Promise(function(r){setTimeout(r,4000);});
+        var obsR=await fetch(obsUrl,{signal:AbortSignal.timeout(8000)});
+        if(obsR.ok){
+          var obsD=await obsR.json();
+          if(obsD.grade){
+            _targetData.hdrGrade=obsD.grade;
+            _targetData.hdrScore=obsD.score||0;
+            _targetData.hdrFailed=obsD.tests_failed||0;
+            _targetData.hdrPassed=obsD.tests_passed||0;
+            var hCol=obsD.grade.startsWith('A')?'var(--g)':obsD.grade.startsWith('B')?'var(--amber)':'var(--red)';
+            tgtRow('HTTP Headers','<span style="color:'+hCol+'">Grade '+escH(obsD.grade)+'</span>  Score: '+escH(String(obsD.score||0))+'/100  '+
+              '<span style="color:var(--g)">✓'+escH(String(obsD.tests_passed||0))+'</span> '+
+              '<span style="color:var(--red)">✗'+escH(String(obsD.tests_failed||0))+'</span>');
+          }
+        }
+      }catch(e){}
+    }
+
+    // Deep links
+    var t4=isIP?ip4:domain;
+    tgtOut('\n  ');
+    tgtLink('VirusTotal','https://www.virustotal.com/gui/'+(isIP?'ip-address':'domain')+'/'+t4);
+    tgtLink('OTX','https://otx.alienvault.com/indicator/'+(isIP?'ip':'domain')+'/'+t4);
+    tgtLink('Shodan','https://www.shodan.io/host/'+ip4);
+    tgtLink('AbuseIPDB','https://www.abuseipdb.com/check/'+ip4);
+    tgtOut('\n','');
+    donePh++;
+  }
+
+  // ──────────────────────────────────────────────
+  // FASE 5 — OSINT
+  // ──────────────────────────────────────────────
+  if(ph('osint')&&!isIP){
+    tgtSection(5,'OSINT','🌐');
+    tgtProgress(90,'Fase 5 · OSINT...');
+
+    // Top dorks (most relevant, not all 90)
+    var topDorks=[
+      'site:'+domain+' ext:sql OR ext:env OR ext:log',
+      'site:'+domain+' inurl:admin OR inurl:login',
+      'site:*.'+domain+' inurl:dev OR inurl:staging OR inurl:test',
+      'site:'+domain+' intext:"DB_PASSWORD" OR intext:"api_key"',
+      '"'+domain+'" site:pastebin.com',
+      'site:'+domain+' inurl:.git',
+      'site:'+domain+' inurl:swagger OR inurl:api-docs OR inurl:graphql',
+      'site:'+domain+' intitle:"index of"',
+      'site:s3.amazonaws.com "'+domain+'"',
+      '"'+domain+'" intext:password site:pastebin.com',
+    ];
+    tgtRow('Dorks OSINT','<span style="color:rgba(0,255,65,.5)">'+topDorks.length+' generados (ver tab DORKS para completo)</span>');
+    tgtOut('<div style="padding-left:14px;margin-top:4px;">','');
+    topDorks.forEach(function(dork){
+      var gUrl='https://www.google.com/search?q='+encodeURIComponent(dork);
+      tgtOut(
+        '<div style="margin:2px 0;"><code style="color:rgba(0,255,65,.6);font-size:.6rem;">'+escH(dork)+'</code> '+
+        '<a href="'+escH(gUrl)+'" target="_blank" style="color:rgba(0,255,65,.35);font-size:.55rem;">▶</a></div>',
+        dork
+      );
+    });
+    tgtOut('</div>\n','');
+
+    // Email OSINT via emailrep.io (CORS-native, no key)
+    try{
+      var emailR=await fetch('https://emailrep.io/query/'+encodeURIComponent('test@'+domain),
+        {signal:AbortSignal.timeout(6000)});
+      if(emailR.ok){
+        // Get domain email pattern via haveibeenpwned domain search
+        var haveR=await fetch('https://haveibeenpwned.com/api/v3/breacheddomain/'+encodeURIComponent(domain),
+          {headers:{'hibp-api-key':''},signal:AbortSignal.timeout(5000)});
+      }
+    }catch(e){}
+
+    // Bug Bounty quick check
+    tgtProgress(93,'Fase 5 · Bug Bounty scope...');
+    try{
+      var bbR=await fetch('https://api.hackerone.com/v1/hackers/programs?page[size]=100',
+        {headers:{'Accept':'application/json'},signal:AbortSignal.timeout(8000)});
+      if(bbR.ok){
+        var bbD=await bbR.json();
+        var rootDom=domain.split('.').slice(-2).join('.');
+        var keyword=rootDom.split('.')[0];
+        var progs=(bbD.data||[]).filter(function(p){
+          var h=(p.attributes&&p.attributes.handle)||'';
+          var n=(p.attributes&&p.attributes.name)||'';
+          return h.toLowerCase().indexOf(keyword)>=0||n.toLowerCase().indexOf(keyword)>=0;
+        });
+        if(progs.length){
+          _targetData.bugBounty=progs;
+          tgtGood('Bug Bounty HackerOne: '+progs.length+' programa(s) — '+
+            progs.map(function(p){return (p.attributes&&p.attributes.name)||'';}).join(', '));
+        } else {
+          tgtOut('<div style="padding-left:14px;font-family:var(--font);font-size:.62rem;color:rgba(0,255,65,.3);">// Sin programa HackerOne público encontrado</div>','');
+        }
+      }
+    }catch(e){}
+
+    // External OSINT links
+    tgtOut('<div style="margin-top:8px;">','');
+    tgtLink('WHOIS who.is','https://who.is/whois/'+domain);
+    tgtLink('DNSDumpster','https://dnsdumpster.com/?domain='+domain);
+    tgtLink('Wayback Machine','https://web.archive.org/web/*/'+domain);
+    tgtLink('crt.sh','https://crt.sh/?q=%.'+domain);
+    tgtLink('Hunter.io','https://hunter.io/search/'+domain);
+    tgtLink('SecurityTrails','https://securitytrails.com/domain/'+domain);
+    tgtOut('</div>\n','');
+    donePh++;
+  }
+
+  // ──────────────────────────────────────────────
+  // RESUMEN EJECUTIVO
+  // ──────────────────────────────────────────────
+  tgtProgress(100,'Completado');
+
+  var crits=(_targetData.criticals||[]).length;
+  var warns=(_targetData.warnings||[]).length;
+  // Exposure score
+  var exposure=0;
+  if(_targetData.cves&&_targetData.cves.length) exposure+=_targetData.cves.length*10;
+  if(_targetData.cfBlocked) exposure+=30;
+  if(_targetData.spamhaus) exposure+=25;
+  if(_targetData.otxPulses) exposure+=Math.min(_targetData.otxPulses*5,30);
+  if(_targetData.ports&&_targetData.ports.some(function(p){return [23,2375,5900,6379,27017,9200].indexOf(p)>=0;})) exposure+=20;
+  if(_targetData.sslDays!==undefined&&_targetData.sslDays<30) exposure+=15;
+  if(_targetData.domainExpiry!==undefined&&_targetData.domainExpiry<30) exposure+=10;
+  exposure=Math.min(exposure,100);
+
+  var expCol=exposure>=70?'var(--red)':exposure>=30?'var(--amber)':'var(--g)';
+  var expLabel=exposure>=70?'ALTO':exposure>=30?'MEDIO':'BAJO';
+
+  var summaryHtml=
+    '<div class="tgt-summary">'+
+    '<div style="font-family:var(--font);font-size:.72rem;color:var(--g);letter-spacing:2px;margin-bottom:10px;">// RESUMEN EJECUTIVO</div>'+
+    '<div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:10px;">'+
+      '<div style="text-align:center;">'+
+        '<div style="font-size:2rem;font-weight:700;color:'+expCol+'">'+exposure+'</div>'+
+        '<div style="font-family:var(--font);font-size:.6rem;color:rgba(0,255,65,.4);">EXPOSURE SCORE</div>'+
+        '<div style="font-family:var(--font);font-size:.65rem;color:'+expCol+'">'+expLabel+'</div>'+
+      '</div>'+
+      '<div style="display:flex;flex-direction:column;gap:6px;justify-content:center;">'+
+        '<div style="font-family:var(--font);font-size:.68rem;"><span style="color:var(--red)">🚨 '+crits+' críticos</span></div>'+
+        '<div style="font-family:var(--font);font-size:.68rem;"><span style="color:var(--amber)">⚠ '+warns+' advertencias</span></div>'+
+        ((_targetData.ips||[]).length?'<div style="font-family:var(--font);font-size:.68rem;color:rgba(0,255,65,.6);">IPs: '+escH(_targetData.ips.join(', '))+'</div>':'')+
+        ((_targetData.subs||[]).length?'<div style="font-family:var(--font);font-size:.68rem;color:rgba(0,255,65,.6);">'+_targetData.subs.length+' subdominios</div>':'')+
+        ((_targetData.cves||[]).length?'<div style="font-family:var(--font);font-size:.68rem;color:var(--red);">'+_targetData.cves.length+' CVEs</div>':'')+
+      '</div>'+
+    '</div>';
+
+  if(crits>0){
+    summaryHtml+='<div style="margin-top:6px;font-family:var(--font);font-size:.62rem;color:rgba(0,255,65,.4);">// Hallazgos críticos:</div>';
+    (_targetData.criticals||[]).forEach(function(h){
+      summaryHtml+='<div style="font-family:var(--font);font-size:.63rem;color:var(--red);padding-left:10px;">🚨 '+escH(h)+'</div>';
+    });
+  }
+  summaryHtml+='</div>';
+
+  tgtOut(summaryHtml);
+  _targetLog.push('\n══ RESUMEN ══');
+  _targetLog.push('Exposure Score: '+exposure+'/100 ('+expLabel+')');
+  _targetLog.push('Críticos: '+crits+' | Advertencias: '+warns);
+
+  if(btn){btn.disabled=false;btn.textContent='🎯 EJECUTAR';}
+}
+
+function targetExport(){
+  if(!_targetData||!_targetData.domain){alert('Ejecuta un scan primero.');return;}
+  generateTargetPDF();
+}
+
+function generateTargetPDF(){
+  var d=_targetData;
+  if(!d||!d.domain){alert('Ejecuta un scan primero.');return;}
+
+  var domain=d.domain||'target';
+  var now=new Date();
+  var dateStr=now.toISOString().replace('T',' ').substring(0,19)+' UTC';
+  var crits=(d.criticals||[]);
+  var warns=(d.warnings||[]);
+
+  // Exposure score
+  var exposure=0;
+  if(d.cves&&d.cves.length) exposure+=Math.min(d.cves.length*8,40);
+  if(d.cfBlocked) exposure+=25;
+  if(d.spamhaus) exposure+=20;
+  if(d.otxPulses) exposure+=Math.min(d.otxPulses*5,25);
+  if(d.ports&&d.ports.some(function(p){return [23,2375,5900,6379,27017,9200,3389].indexOf(p)>=0;})) exposure+=15;
+  if(d.sslDays!==undefined&&d.sslDays<0) exposure+=20;
+  else if(d.sslDays!==undefined&&d.sslDays<30) exposure+=10;
+  if(d.domainExpiry!==undefined&&d.domainExpiry<30) exposure+=10;
+  if(d.takeover&&d.takeover.length) exposure+=30;
+  if(!d.spf) exposure+=5;
+  if(!d.dmarc) exposure+=5;
+  exposure=Math.min(exposure,100);
+  var expLabel=exposure>=70?'ALTO':exposure>=40?'MEDIO':'BAJO';
+  var expHex=exposure>=70?'#ff3232':exposure>=40?'#ffc800':'#00cc44';
+
+  // Helper fns scoped here
+  function eh(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function kv(k,v,col){
+    return '<tr><td class="td-k">'+eh(k)+'</td><td class="td-v"'+(col?' style="color:'+col+'"':'')+'>'+eh(String(v||'—'))+'</td></tr>';
+  }
+  function sectionTitle(num,title,icon,id){
+    return '<div class="sec-title" id="'+id+'"><span class="sec-num">'+num+'</span>'+icon+' '+title+'</div>';
+  }
+  function finding(sev,text){
+    var col=sev==='CRITICAL'?'#ff3232':sev==='HIGH'?'#ff7800':sev==='MEDIUM'?'#ffc800':'#aaa';
+    var bg=sev==='CRITICAL'?'#fff5f5':sev==='HIGH'?'#fff8f0':sev==='MEDIUM'?'#fffef0':'#f8f8f8';
+    return '<div class="finding" style="background:'+bg+';border-left-color:'+col+';">'+
+      '<span class="f-badge" style="background:'+col+'20;color:'+col+';">'+sev+'</span>'+
+      '<span class="f-text">'+eh(text)+'</span></div>';
+  }
+
+  var CSS = [
+    '*{margin:0;padding:0;box-sizing:border-box;}',
+    'body{font-family:"Segoe UI",Arial,sans-serif;background:#fff;color:#1a1a1a;font-size:9.5pt;line-height:1.55;}',
+    '@page{size:A4;margin:15mm 14mm 18mm 14mm;}',
+    '@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}.no-print{display:none!important;}}',
+    /* Print bar */
+    '.print-bar{background:#111;padding:10px 20px;display:flex;justify-content:flex-end;gap:8px;position:sticky;top:0;z-index:99;}',
+    '.btn{padding:7px 18px;border:none;border-radius:3px;font-size:9pt;cursor:pointer;font-weight:600;letter-spacing:.5px;}',
+    '.btn-p{background:#00ff41;color:#000;}.btn-c{background:transparent;border:1px solid #555;color:#aaa;}',
+    /* Cover */
+    '.cover{background:#0a0a0a;min-height:100vh;display:flex;flex-direction:column;padding:40px 48px;page-break-after:always;}',
+    '.cover-logo{font-family:"Courier New",monospace;font-size:28pt;font-weight:700;color:#00ff41;letter-spacing:4px;margin-bottom:4px;}',
+    '.cover-sub{font-family:"Courier New",monospace;font-size:9pt;color:rgba(0,255,65,.4);letter-spacing:3px;margin-bottom:40px;}',
+    '.cover-rule{border:none;border-top:1px solid rgba(0,255,65,.2);margin-bottom:40px;}',
+    '.cover-label{font-size:7.5pt;color:rgba(0,255,65,.4);letter-spacing:3px;text-transform:uppercase;margin-bottom:6px;}',
+    '.cover-domain{font-family:"Courier New",monospace;font-size:22pt;color:#00ff41;font-weight:700;margin-bottom:32px;word-break:break-all;}',
+    '.cover-meta{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:40px;}',
+    '.cover-meta-item label{display:block;font-size:7pt;color:rgba(0,255,65,.35);letter-spacing:2px;margin-bottom:3px;}',
+    '.cover-meta-item span{font-family:"Courier New",monospace;font-size:9pt;color:rgba(0,255,65,.75);}',
+    '.cover-score-box{border:1px solid rgba(0,255,65,.25);border-radius:6px;padding:20px 24px;display:flex;align-items:center;gap:24px;margin-bottom:32px;}',
+    '.score-num{font-family:"Courier New",monospace;font-size:44pt;font-weight:700;line-height:1;}',
+    '.score-info .score-lbl{font-size:7pt;color:rgba(0,255,65,.4);letter-spacing:2px;text-transform:uppercase;}',
+    '.score-info .score-sev{font-size:14pt;font-weight:700;margin-top:4px;}',
+    '.score-info .score-stats{font-size:8.5pt;margin-top:8px;color:rgba(0,255,65,.6);}',
+    '.cover-footer{margin-top:auto;display:flex;justify-content:space-between;font-family:"Courier New",monospace;font-size:7.5pt;color:rgba(0,255,65,.3);border-top:1px solid rgba(0,255,65,.1);padding-top:14px;}',
+    /* Disclaimer page */
+    '.disclaimer-page{padding:40px 48px;page-break-after:always;background:#fafafa;}',
+    '.disclaimer-page h1{font-size:13pt;font-weight:700;margin-bottom:20px;color:#111;border-bottom:2px solid #00cc44;padding-bottom:8px;}',
+    '.disclaimer-page p{font-size:9pt;color:#333;margin-bottom:12px;line-height:1.7;}',
+    '.disclaimer-page ul{margin:8px 0 12px 20px;color:#444;}',
+    '.disclaimer-page li{font-size:9pt;margin-bottom:5px;line-height:1.6;}',
+    '.disclaimer-page .warn-box{background:#fff8f0;border:1px solid #ffc800;border-radius:4px;padding:12px 16px;margin-top:20px;}',
+    '.disclaimer-page .warn-box strong{color:#e69000;}',
+    /* TOC */
+    '.toc-page{padding:40px 48px;page-break-after:always;}',
+    '.toc-page h1{font-size:13pt;font-weight:700;margin-bottom:24px;color:#111;border-bottom:2px solid #00cc44;padding-bottom:8px;}',
+    '.toc-item{display:flex;align-items:baseline;gap:0;margin-bottom:8px;}',
+    '.toc-num{font-size:9pt;color:#888;min-width:32px;}',
+    '.toc-title{font-size:9.5pt;color:#1a1a1a;flex:1;}',
+    '.toc-dots{flex:1;border-bottom:1px dotted #ccc;margin:0 6px;position:relative;top:-3px;}',
+    '.toc-badge{font-size:7.5pt;padding:1px 7px;border-radius:2px;font-weight:600;}',
+    /* Content pages */
+    '.page{padding:32px 48px;page-break-after:always;}',
+    '.page:last-child{page-break-after:auto;}',
+    '.phase-header{background:#0a0a0a;color:#00ff41;padding:10px 16px;border-radius:4px;margin-bottom:16px;display:flex;align-items:center;gap:12px;}',
+    '.phase-num{font-family:"Courier New",monospace;font-size:8pt;color:rgba(0,255,65,.4);border:1px solid rgba(0,255,65,.3);padding:2px 6px;border-radius:2px;}',
+    '.phase-title{font-family:"Courier New",monospace;font-size:11pt;font-weight:700;letter-spacing:2px;}',
+    '.phase-icon{font-size:13pt;}',
+    '.subsection{margin-bottom:20px;}',
+    '.sub-title{font-size:8pt;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#555;margin-bottom:8px;border-bottom:1px solid #eee;padding-bottom:4px;}',
+    'table.kv{width:100%;border-collapse:collapse;margin-bottom:4px;}',
+    '.td-k{font-size:8.5pt;color:#777;padding:3px 0;min-width:130px;vertical-align:top;}',
+    '.td-v{font-size:8.5pt;color:#1a1a1a;padding:3px 0;font-weight:500;word-break:break-word;}',
+    'table.data-table{width:100%;border-collapse:collapse;font-size:8pt;margin-top:6px;}',
+    'table.data-table th{background:#f0f0f0;color:#444;padding:5px 8px;text-align:left;font-size:7.5pt;letter-spacing:1px;border-bottom:2px solid #ddd;}',
+    'table.data-table td{padding:4px 8px;border-bottom:1px solid #f0f0f0;color:#333;vertical-align:top;}',
+    'table.data-table tr:nth-child(even) td{background:#fafafa;}',
+    '.finding{display:flex;align-items:flex-start;gap:8px;padding:7px 10px;margin:4px 0;border-radius:3px;border-left:3px solid #ccc;}',
+    '.f-badge{font-size:7pt;font-weight:700;padding:2px 6px;border-radius:2px;flex-shrink:0;margin-top:1px;letter-spacing:.5px;}',
+    '.f-text{font-size:8.5pt;line-height:1.5;flex:1;}',
+    '.dork-item{font-family:"Courier New",monospace;font-size:7.5pt;color:#333;padding:3px 8px;background:#f8f8f8;border-left:2px solid #ddd;margin:2px 0;word-break:break-all;}',
+    '.tag{display:inline-block;font-size:7pt;padding:1px 6px;border-radius:2px;margin:1px;font-weight:600;}',
+    '.tag-crit{background:#ff323215;color:#cc0000;border:1px solid #ff323240;}',
+    '.tag-high{background:#ff780015;color:#cc5500;border:1px solid #ff780040;}',
+    '.tag-med{background:#ffc80015;color:#996600;border:1px solid #ffc80040;}',
+    '.tag-low{background:#00cc4415;color:#007722;border:1px solid #00cc4440;}',
+    '.tag-info{background:#0088ff15;color:#005599;border:1px solid #0088ff40;}',
+    '.exec-summary{background:#f8f8f8;border-radius:6px;padding:20px 24px;margin-top:16px;}',
+    '.exec-score{display:flex;gap:24px;align-items:center;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid #eee;}',
+    '.exec-num{font-size:42pt;font-weight:700;line-height:1;}',
+    '.page-label{font-size:7.5pt;color:#aaa;text-align:right;margin-bottom:8px;font-style:italic;}',
+  ].join('\n');
+
+  // Build sections
+  var sections=[];
+
+  // ── COVER ───────────────────────────────────────────────────
+  var coverHtml=
+    '<div class="cover">'+
+    '<div class="cover-logo">_Y000!_</div>'+
+    '<div class="cover-sub">SECURITY RECON REPORT</div>'+
+    '<hr class="cover-rule">'+
+    '<div class="cover-label">Target analizado</div>'+
+    '<div class="cover-domain">'+eh(domain)+'</div>'+
+    '<div class="cover-meta">'+
+      '<div class="cover-meta-item"><label>Analista</label><span>Luis Alberto Gastelum Madero</span></div>'+
+      '<div class="cover-meta-item"><label>Fecha</label><span>'+eh(dateStr)+'</span></div>'+
+      '<div class="cover-meta-item"><label>Metodología</label><span>OSINT / Recon Pasivo</span></div>'+
+      '<div class="cover-meta-item"><label>Clasificación</label><span style="color:#ff3232;font-weight:700;">CONFIDENCIAL</span></div>'+
+      (d.ips&&d.ips.length?'<div class="cover-meta-item"><label>IP Principal</label><span>'+eh(d.ips[0])+'</span></div>':'')+
+      (d.asn?'<div class="cover-meta-item"><label>ASN</label><span>'+eh(d.asn+(d.org?' — '+d.org:''))+'</span></div>':'')+
+    '</div>'+
+    '<div class="cover-score-box">'+
+      '<div><div class="score-lbl">Exposure Score</div>'+
+      '<div class="score-num" style="color:'+expHex+'">'+exposure+'<span style="font-size:18pt;color:#555">/100</span></div></div>'+
+      '<div class="score-info">'+
+        '<div class="score-lbl">Nivel de Riesgo</div>'+
+        '<div class="score-sev" style="color:'+expHex+'">'+expLabel+'</div>'+
+        '<div class="score-stats">'+
+          '<span style="color:#ff3232">🚨 '+crits.length+' críticos</span>&nbsp;&nbsp;'+
+          '<span style="color:#ffc800">⚠ '+warns.length+' advertencias</span>&nbsp;&nbsp;'+
+          (d.cves&&d.cves.length?'<span style="color:#ff7800">'+d.cves.length+' CVEs</span>&nbsp;&nbsp;':'')+
+          (d.subs&&d.subs.length?'<span style="color:#555">'+d.subs.length+' subdominios</span>':'')+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="cover-footer">'+
+      '<span>y000o.github.io</span><span>'+eh(domain)+'</span><span>'+eh(dateStr)+'</span>'+
+    '</div>'+
+    '</div>';
+
+  // ── DISCLAIMER ──────────────────────────────────────────────
+  var disclaimerHtml=
+    '<div class="disclaimer-page">'+
+    '<h1>Aviso Legal y Confidencialidad</h1>'+
+    '<p><strong>Autor del reporte:</strong> Luis Alberto Gastelum Madero (_Y000!_) — Especialista en Ciberseguridad, Gobierno de Querétaro. ISO 27001 Lead Auditor. Investigador reconocido en el Hall of Fame de CEPAL/ONU.</p>'+
+    '<p><strong>Naturaleza del reporte:</strong> Este documento contiene información técnica de reconocimiento pasivo (OSINT) generada mediante consultas a fuentes públicas. No se realizó ningún acceso no autorizado, inyección de tráfico activo, ni interacción directa con los sistemas del objetivo más allá de consultas DNS estándar.</p>'+
+    '<p><strong>Uso autorizado:</strong> Este reporte está destinado exclusivamente para:</p>'+
+    '<ul>'+
+      '<li>El propietario legítimo del dominio/sistema analizado.</li>'+
+      '<li>Personal de seguridad con autorización explícita del propietario.</li>'+
+      '<li>Actividades de auditoría, pentesting o bug bounty con alcance previamente definido y consentimiento escrito.</li>'+
+    '</ul>'+
+    '<p><strong>Prohibiciones:</strong> Queda estrictamente prohibido usar la información contenida en este reporte para acceder, modificar, interrumpir o dañar sistemas informáticos sin autorización expresa. El uso indebido puede constituir un delito bajo la legislación aplicable (Código Penal Federal de México, Computer Fraud and Abuse Act, GDPR, entre otros).</p>'+
+    '<p><strong>Limitación de responsabilidad:</strong> El autor de este reporte no asume responsabilidad alguna por el uso indebido de la información aquí contenida. La información fue obtenida de fuentes públicas y puede estar desactualizada. Este reporte no constituye una auditoría de seguridad completa.</p>'+
+    '<div class="warn-box"><strong>⚠ ADVERTENCIA:</strong> Este documento es confidencial. Su distribución, reproducción o divulgación sin autorización expresa del autor está prohibida.</div>'+
+    '</div>';
+
+  // ── TABLE OF CONTENTS ────────────────────────────────────────
+  var tocItems=[
+    ['1','Reconocimiento Inicial','🔍',crits.filter(function(x){return x.indexOf('SPF')>=0||x.indexOf('DMARC')>=0;}).length>0?'⚠':'✓'],
+    ['2','Infraestructura y WHOIS','🏗',d.domainExpiry!==undefined&&d.domainExpiry<30?'⚠':'✓'],
+    ['3','Superficie de Ataque','⚔',(d.cves&&d.cves.length)||(d.takeover&&d.takeover.length)?'🚨':'✓'],
+    ['4','Threat Intelligence','☣',d.cfBlocked||d.spamhaus||d.otxPulses?'🚨':'✓'],
+    ['5','OSINT y Recursos','🌐','✓'],
+    ['6','Resumen Ejecutivo','📊',exposure>=40?'⚠':'✓'],
+  ];
+  var tocHtml=
+    '<div class="toc-page">'+
+    '<h1>Índice de Contenidos</h1>'+
+    tocItems.map(function(t,i){
+      return '<div class="toc-item">'+
+        '<span class="toc-num">'+t[0]+'.</span>'+
+        '<span class="phase-icon" style="margin-right:6px;">'+t[2]+'</span>'+
+        '<span class="toc-title">'+t[1]+'</span>'+
+        '<span class="toc-dots"></span>'+
+        '<span class="toc-badge" style="background:#f0f0f0;color:#555;">'+t[3]+'</span>'+
+        '</div>';
+    }).join('')+
+    '</div>';
+
+  // ── FASE 1 — RECONOCIMIENTO INICIAL ─────────────────────────
+  var f1html=
+    '<div class="page">'+
+    '<div class="page-label">Fase 1 — Reconocimiento Inicial</div>'+
+    '<div class="phase-header"><span class="phase-num">FASE 01</span><span class="phase-icon">🔍</span><span class="phase-title">RECONOCIMIENTO INICIAL</span></div>'+
+
+    '<div class="subsection"><div class="sub-title">Registros DNS</div>'+
+    '<table class="kv">'+
+    kv('Dominio', domain)+
+    kv('IPs (A)', (d.ips||[]).join(', '))+
+    (d.ips6&&d.ips6.length?kv('IPs (AAAA)', d.ips6.slice(0,3).join(', ')):'')+
+    (d.mx&&d.mx.length?kv('Registros MX', d.mx.slice(0,4).join(' | ')):kv('Registros MX','No encontrados','#aaa'))+
+    (d.ns&&d.ns.length?kv('Nameservers', d.ns.slice(0,4).join(' | ')):'')+
+    '</table></div>'+
+
+    '<div class="subsection"><div class="sub-title">Seguridad de Email</div>'+
+    '<table class="kv">'+
+    kv('SPF', d.spf||'⚠ No configurado', d.spf?'':'#cc0000')+
+    kv('DMARC', d.dmarc||'⚠ No configurado', d.dmarc?'':'#cc0000')+
+    '</table>'+
+    (!d.spf?'<div style="font-size:8pt;color:#cc0000;margin-top:4px;">⚠ Sin SPF: el dominio es vulnerable a email spoofing</div>':'')+
+    (!d.dmarc?'<div style="font-size:8pt;color:#cc0000;margin-top:4px;">⚠ Sin DMARC: emails pueden ser falsificados sin detección</div>':'')+
+    '</div>'+
+    '</div>';
+
+  // ── FASE 2 — INFRAESTRUCTURA ─────────────────────────────────
+  var f2html=
+    '<div class="page">'+
+    '<div class="page-label">Fase 2 — Infraestructura y WHOIS</div>'+
+    '<div class="phase-header"><span class="phase-num">FASE 02</span><span class="phase-icon">🏗</span><span class="phase-title">INFRAESTRUCTURA</span></div>'+
+
+    '<div class="subsection"><div class="sub-title">Red y ASN</div>'+
+    '<table class="kv">'+
+    kv('IP Principal', (d.ips&&d.ips[0])||'—')+
+    kv('ASN', (d.asn||'—')+(d.org?' — '+d.org:''))+
+    kv('Organización', d.org||'—')+
+    kv('País', d.country||'—')+
+    '</table></div>'+
+
+    '<div class="subsection"><div class="sub-title">WHOIS</div>'+
+    '<table class="kv">'+
+    kv('Registrar', d.registrar||'—')+
+    (d.whoisDates&&d.whoisDates.created?kv('Fecha registro', d.whoisDates.created):'')+
+    (d.whoisDates&&d.whoisDates.updated?kv('Última actualización', d.whoisDates.updated):'')+
+    (d.whoisDates&&d.whoisDates.expiry?
+      kv('Expiración', d.whoisDates.expiry+(d.domainExpiry!==undefined?' ('+d.domainExpiry+' días)':''),
+         d.domainExpiry!==undefined&&d.domainExpiry<30?'#cc0000':undefined):'')+
+    (d.whoisNS&&d.whoisNS.length?kv('Nameservers WHOIS', d.whoisNS.slice(0,3).join(', ')):'')+
+    '</table></div>'+
+
+    '<div class="subsection"><div class="sub-title">Certificado SSL/TLS</div>'+
+    '<table class="kv">'+
+    kv('CN', d.sslCN||'—')+
+    kv('Issuer', (d.sslIssuer||'—').substring(0,80))+
+    kv('Válido desde', d.sslNotBefore||'—')+
+    kv('Expira', (d.sslNotAfter||'—')+(d.sslDays!==undefined?' ('+d.sslDays+' días)':''),
+       d.sslDays!==undefined&&d.sslDays<0?'#cc0000':d.sslDays!==undefined&&d.sslDays<30?'#e69000':undefined)+
+    kv('Total CT logs', d.sslTotal?String(d.sslTotal):'—')+
+    '</table>'+
+    (d.sslSANs&&d.sslSANs.length?
+      '<div style="margin-top:6px;"><div style="font-size:7.5pt;color:#777;margin-bottom:4px;">SANs ('+d.sslSANs.length+'):</div>'+
+      d.sslSANs.slice(0,12).map(function(s){
+        var isWild=s.startsWith('*.');
+        return '<span class="tag '+(isWild?'tag-med':'tag-info')+'">'+eh(s)+'</span>';
+      }).join('')+
+      (d.sslSANs.length>12?'<span class="tag tag-info">+'+( d.sslSANs.length-12)+' más</span>':'')+
+      '</div>':'')+
+    '</div>'+
+    '</div>';
+
+  // ── FASE 3 — SUPERFICIE DE ATAQUE ────────────────────────────
+  var f3rows='';
+  if(d.ports&&d.ports.length){
+    var dangerPorts={22:'SSH',23:'Telnet (inseguro)',3389:'RDP',5900:'VNC',6379:'Redis',
+      27017:'MongoDB',9200:'Elasticsearch',2375:'Docker API',5432:'PostgreSQL',3306:'MySQL',
+      8080:'HTTP alt',8443:'HTTPS alt',4444:'Meterpreter',11211:'Memcached'};
+    f3rows='<table class="data-table"><thead><tr><th>Puerto</th><th>Servicio</th><th>Riesgo</th></tr></thead><tbody>'+
+      d.ports.map(function(p){
+        var svc=dangerPorts[p]||'—';
+        var risk=([23,2375,5900,6379,27017,9200,3389,4444,11211].indexOf(p)>=0)?
+          '<span class="tag tag-crit">ALTO</span>':
+          ([22,3306,5432,8080].indexOf(p)>=0)?'<span class="tag tag-med">MEDIO</span>':
+          '<span class="tag tag-low">BAJO</span>';
+        return '<tr><td><strong>'+eh(String(p))+'</strong></td><td>'+eh(svc)+'</td><td>'+risk+'</td></tr>';
+      }).join('')+'</tbody></table>';
+  }
+
+  var f3cve='';
+  if(d.cveDetails&&d.cveDetails.length){
+    f3cve='<div class="subsection"><div class="sub-title">CVEs con CVSS (top '+d.cveDetails.length+')</div>'+
+      '<table class="data-table"><thead><tr><th>CVE ID</th><th>CVSS</th><th>Severidad</th><th>Descripción</th></tr></thead><tbody>'+
+      d.cveDetails.map(function(cve){
+        var score=cve.cvss3||cve.cvss||0;
+        var sev=score>=9?'CRITICAL':score>=7?'HIGH':score>=4?'MEDIUM':'LOW';
+        var cls=score>=9?'tag-crit':score>=7?'tag-high':score>=4?'tag-med':'tag-low';
+        return '<tr>'+
+          '<td><a href="https://nvd.nist.gov/vuln/detail/'+eh(cve.id)+'" style="color:#0066cc;font-size:7.5pt;">'+eh(cve.id)+'</a></td>'+
+          '<td><strong>'+eh(String(score))+'</strong></td>'+
+          '<td><span class="tag '+cls+'">'+sev+'</span></td>'+
+          '<td style="font-size:8pt;">'+eh((cve.summary||'').substring(0,100))+'</td>'+
+          '</tr>';
+      }).join('')+'</tbody></table></div>';
+  } else if(d.cves&&d.cves.length){
+    f3cve='<div class="subsection"><div class="sub-title">CVEs detectados ('+d.cves.length+' — enriquecimiento pendiente)</div>'+
+      '<div style="font-size:8pt;color:#444;">'+d.cves.slice(0,15).map(function(cv){
+        return '<span class="tag tag-med">'+eh(cv)+'</span>';
+      }).join('')+(d.cves.length>15?'<span style="color:#999;font-size:7.5pt;"> +'+( d.cves.length-15)+' más</span>':'')+
+      '</div></div>';
+  }
+
+  var f3subs='';
+  if(d.subs&&d.subs.length){
+    var subsToShow=d.subs.slice(0,50);
+    var activeSet={};
+    if(d.subsActive) d.subsActive.forEach(function(a){activeSet[a.sub]=a;});
+    var takeoverSet={};
+    if(d.takeover) d.takeover.forEach(function(t){takeoverSet[t.sub]=t;});
+    f3subs='<div class="subsection"><div class="sub-title">Subdominios ('+d.subs.length+' encontrados'+
+      (d.subsActive?' · '+d.subsActive.length+' activos':'')+
+      (d.takeover&&d.takeover.length?' · <span style="color:#cc0000">'+d.takeover.length+' posible takeover</span>':'')+
+      ')</div>'+
+      '<table class="data-table"><thead><tr><th>#</th><th>Subdominio</th><th>Estado</th><th>Tipo</th></tr></thead><tbody>'+
+      subsToShow.map(function(s,i){
+        var isActive=!!activeSet[s];
+        var isTake=!!takeoverSet[s];
+        var type=/dev\.|staging\.|test\./.test(s)?'<span class="tag tag-med">Test/Dev</span>':
+                 /admin\.|panel\./.test(s)?'<span class="tag tag-crit">Admin</span>':
+                 /api\./.test(s)?'<span class="tag tag-info">API</span>':
+                 /mail\.|smtp\.|webmail\./.test(s)?'<span class="tag tag-info">Mail</span>':
+                 /vpn\.|remote\./.test(s)?'<span class="tag tag-med">VPN</span>':'—';
+        var status=isTake?'<span class="tag tag-crit">⚠ Takeover</span>':
+                   isActive?'<span class="tag tag-low">Activo</span>':
+                   d.subsActive?'<span class="tag" style="background:#f0f0f0;color:#999;">Inactivo</span>':'—';
+        return '<tr><td style="color:#aaa">'+(i+1)+'</td><td style="font-size:8pt;">'+eh(s)+'</td><td>'+status+'</td><td>'+type+'</td></tr>';
+      }).join('')+
+      (d.subs.length>50?'<tr><td colspan="4" style="color:#999;font-style:italic;text-align:center;">... y '+(d.subs.length-50)+' subdominios más</td></tr>':'')+
+      '</tbody></table></div>';
+  }
+
+  var f3techs='';
+  if(d.techs&&d.techs.length){
+    f3techs='<div class="subsection"><div class="sub-title">Tecnologías Detectadas (urlscan.io)</div>'+
+      '<table class="data-table"><thead><tr><th>Tecnología</th><th>Versión</th><th>Categoría</th></tr></thead><tbody>'+
+      d.techs.filter(function(t){return t.name&&t.cat!=='Info';}).slice(0,12).map(function(t){
+        return '<tr><td><strong>'+eh(t.name)+'</strong></td><td style="color:#888;">'+eh(t.val||'—')+'</td><td><span class="tag tag-info">'+eh(t.cat||'—')+'</span></td></tr>';
+      }).join('')+'</tbody></table></div>';
+  }
+
+  var f3html=
+    '<div class="page">'+
+    '<div class="page-label">Fase 3 — Superficie de Ataque</div>'+
+    '<div class="phase-header"><span class="phase-num">FASE 03</span><span class="phase-icon">⚔</span><span class="phase-title">SUPERFICIE DE ATAQUE</span></div>'+
+    (d.ports&&d.ports.length?'<div class="subsection"><div class="sub-title">Puertos Abiertos (Shodan InternetDB)</div>'+f3rows+'</div>':'')+
+    f3cve+f3subs+f3techs+
+    (d.takeover&&d.takeover.length?
+      '<div class="subsection"><div class="sub-title" style="color:#cc0000;">⚠ Posibles Subdomain Takeover</div>'+
+      d.takeover.map(function(t){
+        return '<div class="finding" style="background:#fff5f5;border-left-color:#ff3232;">'+
+          '<span class="f-badge" style="background:#ff323220;color:#cc0000;">TAKEOVER</span>'+
+          '<span class="f-text">'+eh(t.sub)+' → '+eh(t.cname)+' ('+eh(t.service)+')</span></div>';
+      }).join('')+'</div>':'')+'</div>';
+
+  // ── FASE 4 — THREAT INTEL ────────────────────────────────────
+  var f4html=
+    '<div class="page">'+
+    '<div class="page-label">Fase 4 — Threat Intelligence</div>'+
+    '<div class="phase-header"><span class="phase-num">FASE 04</span><span class="phase-icon">☣</span><span class="phase-title">THREAT INTELLIGENCE</span></div>'+
+
+    '<div class="subsection"><div class="sub-title">Reputación y Blacklists</div>'+
+    '<table class="kv">'+
+    kv('OTX AlienVault', d.otxPulses?'⚠ '+d.otxPulses+' pulsos de amenaza':'✓ Sin amenazas conocidas', d.otxPulses?'#cc0000':undefined)+
+    kv('Cloudflare Security', d.cfBlocked?'🚨 BLOQUEADO (malware/phishing)':'✓ No bloqueado', d.cfBlocked?'#cc0000':undefined)+
+    kv('Spamhaus ZEN', d.spamhaus?'🚨 IP en lista negra':'✓ No listado', d.spamhaus?'#cc0000':undefined)+
+    '</table></div>'+
+
+    (d.hdrGrade?
+      '<div class="subsection"><div class="sub-title">Cabeceras de Seguridad HTTP (Mozilla Observatory)</div>'+
+      '<table class="kv">'+
+      kv('Grade', d.hdrGrade, d.hdrGrade&&d.hdrGrade.startsWith('A')?'#007722':d.hdrGrade&&d.hdrGrade.startsWith('B')?'#996600':'#cc0000')+
+      kv('Score', (d.hdrScore||0)+'/100')+
+      kv('Tests pasados', d.hdrPassed||0)+
+      kv('Tests fallidos', d.hdrFailed||0, d.hdrFailed?'#cc0000':undefined)+
+      '</table></div>':'')+
+
+    '<div class="subsection"><div class="sub-title">Referencias Externas</div>'+
+    '<div style="font-size:8.5pt;line-height:2;">'+
+    '<a href="https://www.virustotal.com/gui/domain/'+eh(domain)+'" style="color:#0066cc;margin-right:16px;">VirusTotal ↗</a>'+
+    '<a href="https://otx.alienvault.com/indicator/domain/'+eh(domain)+'" style="color:#0066cc;margin-right:16px;">OTX ↗</a>'+
+    (d.ips&&d.ips[0]?'<a href="https://www.abuseipdb.com/check/'+eh(d.ips[0])+'" style="color:#0066cc;margin-right:16px;">AbuseIPDB ↗</a>':'')+
+    '<a href="https://securityheaders.com/?q='+eh(domain)+'" style="color:#0066cc;">SecurityHeaders.com ↗</a>'+
+    '</div></div>'+
+    '</div>';
+
+  // ── FASE 5 — OSINT ───────────────────────────────────────────
+  var dorkCats={
+    'Exposición de archivos':['site:'+domain+' ext:sql OR ext:env OR ext:log','site:'+domain+' ext:bak OR ext:backup OR ext:old','site:'+domain+' ext:pdf OR ext:doc OR ext:xls'],
+    'Paneles admin/login':['site:'+domain+' inurl:admin OR inurl:login','site:'+domain+' inurl:wp-admin OR inurl:phpmyadmin','site:'+domain+' inurl:dashboard OR inurl:panel'],
+    'Configuraciones':['site:'+domain+' inurl:.git OR inurl:.env','site:'+domain+' inurl:config.php OR inurl:web.config','site:'+domain+' intext:"DB_PASSWORD" OR intext:"api_key"'],
+    'Vulnerabilidades':['site:'+domain+' intext:"SQL syntax" OR intext:"mysql_fetch"','site:'+domain+' intitle:"index of" OR intitle:"phpinfo"','site:'+domain+' intext:"Traceback" OR intext:"Fatal error"'],
+    'Subdominios':['site:*.'+domain+' -site:www.'+domain,'site:*.'+domain+' inurl:dev OR inurl:staging OR inurl:test','site:*.'+domain+' inurl:api OR inurl:admin'],
+    'Cloud/OSINT':['site:s3.amazonaws.com "'+domain+'"','"'+domain+'" site:pastebin.com','site:'+domain+' inurl:swagger OR inurl:api-docs OR inurl:graphql'],
+  };
+
+  var f5html=
+    '<div class="page">'+
+    '<div class="page-label">Fase 5 — OSINT</div>'+
+    '<div class="phase-header"><span class="phase-num">FASE 05</span><span class="phase-icon">🌐</span><span class="phase-title">OSINT Y RECURSOS</span></div>'+
+
+    (d.bugBounty&&d.bugBounty.length?
+      '<div class="subsection"><div class="sub-title" style="color:#007722;">✓ Programa Bug Bounty Encontrado</div>'+
+      d.bugBounty.map(function(p){
+        var attr=p.attributes||{};
+        return '<div style="background:#f0fff4;border:1px solid #00cc44;border-radius:4px;padding:8px 12px;margin:4px 0;font-size:8.5pt;">'+
+          '<strong>'+eh(attr.name||attr.handle||'?')+'</strong> — '+
+          (attr.offers_bounties?'💰 Paga bounty':'Solo reconocimiento')+
+          ' — <a href="https://hackerone.com/'+eh(attr.handle||'')+'" style="color:#0066cc;">hackerone.com/'+eh(attr.handle||'')+'</a>'+
+          '</div>';
+      }).join('')+'</div>':
+      '<div class="subsection"><div class="sub-title">Bug Bounty</div><p style="font-size:8.5pt;color:#888;">Sin programa público encontrado en HackerOne o Bugcrowd.</p></div>')+
+
+    '<div class="subsection"><div class="sub-title">Google Dorks por Categoría</div>'+
+    Object.keys(dorkCats).map(function(cat){
+      return '<div style="margin-bottom:10px;"><div style="font-size:8pt;font-weight:600;color:#555;margin-bottom:4px;">'+eh(cat)+'</div>'+
+        dorkCats[cat].map(function(dork){return '<div class="dork-item">'+eh(dork)+'</div>';}).join('')+
+        '</div>';
+    }).join('')+'</div>'+
+
+    '<div class="subsection"><div class="sub-title">Recursos OSINT</div>'+
+    '<table class="data-table"><thead><tr><th>Herramienta</th><th>URL</th></tr></thead><tbody>'+
+    [
+      ['DNSDumpster','https://dnsdumpster.com/?domain='+domain],
+      ['Wayback Machine','https://web.archive.org/web/*/'+domain],
+      ['crt.sh','https://crt.sh/?q=%.'+domain],
+      ['SecurityTrails','https://securitytrails.com/domain/'+domain],
+      ['Hunter.io (emails)','https://hunter.io/search/'+domain],
+      ['Shodan','https://www.shodan.io/search?query=hostname:'+domain],
+      ['urlscan.io','https://urlscan.io/search/#page.domain:'+domain],
+    ].map(function(r){
+      return '<tr><td>'+eh(r[0])+'</td><td><a href="'+eh(r[1])+'" style="color:#0066cc;font-size:8pt;">'+eh(r[1])+'</a></td></tr>';
+    }).join('')+'</tbody></table></div>'+
+    '</div>';
+
+  // ── RESUMEN EJECUTIVO ────────────────────────────────────────
+  var execHtml=
+    '<div class="page">'+
+    '<div class="page-label">Resumen Ejecutivo</div>'+
+    '<div class="phase-header"><span class="phase-num">RESUMEN</span><span class="phase-icon">📊</span><span class="phase-title">RESUMEN EJECUTIVO</span></div>'+
+    '<div class="exec-summary">'+
+      '<div class="exec-score">'+
+        '<div><div style="font-size:8pt;color:#888;text-transform:uppercase;letter-spacing:2px;">Exposure Score</div>'+
+        '<div class="exec-num" style="color:'+expHex+'">'+exposure+'<span style="font-size:16pt;color:#aaa">/100</span></div></div>'+
+        '<div style="flex:1;padding-left:24px;">'+
+          '<div style="font-size:14pt;font-weight:700;color:'+expHex+'">'+expLabel+'</div>'+
+          '<div style="font-size:8.5pt;color:#555;margin-top:6px;">'+
+            '<span style="color:#ff3232;margin-right:12px;">🚨 '+crits.length+' hallazgos críticos</span>'+
+            '<span style="color:#ffc800;">⚠ '+warns.length+' advertencias</span>'+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+      (crits.length?
+        '<div style="margin-bottom:14px;"><div style="font-size:8pt;font-weight:700;text-transform:uppercase;color:#cc0000;margin-bottom:6px;">Hallazgos Críticos</div>'+
+        crits.map(function(h){return finding('CRITICAL',h);}).join('')+'</div>':'')+
+      (warns.length?
+        '<div style="margin-bottom:14px;"><div style="font-size:8pt;font-weight:700;text-transform:uppercase;color:#996600;margin-bottom:6px;">Advertencias</div>'+
+        warns.slice(0,8).map(function(h){return finding('MEDIUM',h);}).join('')+'</div>':'')+
+      '<div><div style="font-size:8pt;font-weight:700;text-transform:uppercase;color:#555;margin-bottom:8px;">Recomendaciones Prioritarias</div>'+
+      [
+        (!d.spf?'Implementar registro SPF en el DNS del dominio':''),
+        (!d.dmarc?'Configurar política DMARC para prevenir spoofing de email':''),
+        (d.cves&&d.cves.length?'Actualizar software para remediar '+d.cves.length+' CVEs detectados por Shodan':''),
+        (d.takeover&&d.takeover.length?'Investigar '+d.takeover.length+' posibles subdomain takeovers de inmediato':''),
+        (d.sslDays!==undefined&&d.sslDays<30?'Renovar certificado SSL (expira en '+d.sslDays+' días)':''),
+        (d.ports&&d.ports.some(function(p){return [23,6379,27017,2375].indexOf(p)>=0;})?'Restringir acceso público a servicios de base de datos y administración':''),
+        (d.hdrGrade&&!d.hdrGrade.startsWith('A')?'Implementar cabeceras de seguridad HTTP (grade actual: '+d.hdrGrade+')':''),
+        (d.cfBlocked?'Investigar y remediar la causa del bloqueo por Cloudflare Security':''),
+      ].filter(Boolean).slice(0,5).map(function(r,i){
+        return '<div style="display:flex;gap:8px;margin-bottom:5px;"><span style="color:#00cc44;font-weight:700;min-width:16px;">'+(i+1)+'.</span><span style="font-size:8.5pt;color:#333;">'+eh(r)+'</span></div>';
+      }).join('')+
+      '</div>'+
+    '</div>'+
+    '</div>';
+
+  // Assemble full HTML
+  var html='<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">'+
+    '<title>Recon Report — '+eh(domain)+'</title>'+
+    '<style>'+CSS+'</style></head><body>'+
+    '<div class="print-bar no-print">'+
+      '<button class="btn btn-c" onclick="window.close()">✕ Cerrar</button>'+
+      '<button class="btn btn-p" onclick="window.print()">⬇ Descargar PDF</button>'+
+    '</div>'+
+    coverHtml+disclaimerHtml+tocHtml+f1html+f2html+f3html+f4html+f5html+execHtml+
+    '</body></html>';
+
+  var w=window.open('','_blank','width=960,height=800');
+  if(!w){alert('Permite popups para este sitio.');return;}
+  w.document.write(html);
+  w.document.close();
+  w.focus();
 }
 
 async function tkMyIP(){
