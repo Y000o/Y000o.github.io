@@ -5709,8 +5709,11 @@ async function runTarget(){
       if(wr.ok){
         var wd=await wr.json();
         if(!wd.error){
-          var dates=wd.important_dates||{};
-          var reg=wd.registrar||{};
+          var dates=wd.important_dates||wd.dates||{};
+          var reg=wd.registrar||wd.registrar_info||{};
+          // Also check top-level for some TLDs
+          if(!reg.name&&wd.domain_registrar) reg={name:wd.domain_registrar};
+          if(!dates.created&&wd.created_date) dates={created:wd.created_date,expiry:wd.expiry_date,updated:wd.updated_date};
           if(reg.name){_targetData.registrar=reg.name;tgtRow('Registrar',escH(reg.name));}
           _targetData.whoisDates=dates;
           if(dates.created) tgtRow('Creado',escH(dates.created));
@@ -5740,7 +5743,7 @@ async function runTarget(){
     // Ports + CVEs (Shodan InternetDB)
     if(!isIP||ip3){
       try{
-        tgtProgress(38,'Fase 3 · Shodan InternetDB...');
+        tgtProgress(38,'Fase 3 · Shodan InternetDB + CVE enrichment (puede tardar ~30s)...');
         var sr=await fetch('https://internetdb.shodan.io/'+encodeURIComponent(ip3),
           {signal:AbortSignal.timeout(8000)});
         var sd=await sr.json();
@@ -5757,19 +5760,41 @@ async function runTarget(){
         if(sd.vulns&&sd.vulns.length){
           _targetData.cves=sd.vulns;
           tgtCrit(sd.vulns.length+' CVEs conocidos: '+sd.vulns.slice(0,5).join(', ')+(sd.vulns.length>5?' ...':''));
-          // Enrich top 5 CVEs with CVSS from CIRCL
+          // Enrich CVEs with CVSS — sequential to avoid rate limits, top 8
           try{
-            var topCVEs=sd.vulns.slice(0,5);
-            var cveDetails=await Promise.allSettled(topCVEs.map(function(cid){
-              return fetch('https://cve.circl.lu/api/cve/'+encodeURIComponent(cid),
-                {signal:AbortSignal.timeout(6000)}).then(function(r){return r.json();});
-            }));
+            var topCVEs=sd.vulns.slice(0,8);
             var enriched=[];
-            cveDetails.forEach(function(r){
-              if(r.status==='fulfilled'&&r.value&&r.value.id){
-                enriched.push(r.value);
+            for(var ci=0;ci<topCVEs.length;ci++){
+              try{
+                // Try CIRCL first, then NVD as fallback
+                var cveId=topCVEs[ci];
+                var cr=await fetch('https://cve.circl.lu/api/cve/'+encodeURIComponent(cveId),
+                  {signal:AbortSignal.timeout(5000)});
+                if(cr.ok){
+                  var cd=await cr.json();
+                  if(cd&&cd.id) enriched.push(cd);
+                  else throw new Error('empty');
+                } else throw new Error('status '+cr.status);
+              }catch(ce){
+                // NVD fallback
+                try{
+                  var nr=await fetch('https://services.nvd.nist.gov/rest/json/cves/2.0?cveId='+encodeURIComponent(topCVEs[ci]),
+                    {signal:AbortSignal.timeout(6000)});
+                  if(nr.ok){
+                    var nd=await nr.json();
+                    var nvdCve=nd.vulnerabilities&&nd.vulnerabilities[0]&&nd.vulnerabilities[0].cve;
+                    if(nvdCve){
+                      var metrics=nvdCve.metrics||{};
+                      var cvss3=(metrics.cvssMetricV31&&metrics.cvssMetricV31[0]&&metrics.cvssMetricV31[0].cvssData&&metrics.cvssMetricV31[0].cvssData.baseScore)||0;
+                      var cvss2=(metrics.cvssMetricV2&&metrics.cvssMetricV2[0]&&metrics.cvssMetricV2[0].cvssData&&metrics.cvssMetricV2[0].cvssData.baseScore)||0;
+                      var desc=(nvdCve.descriptions&&nvdCve.descriptions.find(function(d){return d.lang==='en';}))||{};
+                      enriched.push({id:topCVEs[ci],cvss3:cvss3||cvss2,cvss:cvss2,summary:desc.value||'',Published:nvdCve.published||''});
+                    }
+                  }
+                }catch(ne){}
               }
-            });
+              await new Promise(function(r){setTimeout(r,300);});// rate limit delay
+            }
             if(enriched.length){
               _targetData.cveDetails=enriched;
               enriched.forEach(function(cve){
@@ -5842,13 +5867,16 @@ async function runTarget(){
             var notAfter=cert.not_after?new Date(cert.not_after):null;
             var daysSSL=notAfter?Math.floor((notAfter-new Date())/86400000):null;
             var sslCol=!notAfter?'var(--amber)':daysSSL<0?'var(--red)':daysSSL<30?'var(--amber)':'rgba(0,255,65,.7)';
-            _targetData.sslCN=cert.common_name||'';
+            _targetData.sslCN=cert.common_name||cert.name_value||'';
             _targetData.sslIssuer=cert.issuer_name||'';
             _targetData.sslNotAfter=cert.not_after||'';
             _targetData.sslNotBefore=cert.not_before||'';
             var sans=(cert.name_value||'').split('\n').filter(function(s){return s.trim();});
             _targetData.sslSANs=[...new Set(sans)].slice(0,20);
             _targetData.sslTotal=ssl_d.length;
+            // Also get issuer details from the cert with most detail
+            var detailCert=ssl_d.find(function(x){return x.issuer_name&&x.issuer_name.length>10;})||cert;
+            if(detailCert.issuer_name) _targetData.sslIssuer=detailCert.issuer_name;
             tgtRow('SSL CN',escH(cert.common_name||'—'));
             tgtRow('SSL Issuer',escH((cert.issuer_name||'—').substring(0,50)));
             tgtRow('SSL Expira','<span style="color:'+sslCol+'">'+escH(cert.not_after||'—')+(daysSSL!==null?' ('+daysSSL+' días)':'')+'</span>');
@@ -6393,7 +6421,7 @@ function generateTargetPDF(){
 
     '<div class="subsection"><div class="sub-title">WHOIS</div>'+
     '<table class="kv">'+
-    kv('Registrar', d.registrar||'—')+
+    kv('Registrar', d.registrar||'Sin datos (ver RDAP/ARIN)')+
     (d.whoisDates&&d.whoisDates.created?kv('Fecha registro', d.whoisDates.created):'')+
     (d.whoisDates&&d.whoisDates.updated?kv('Última actualización', d.whoisDates.updated):'')+
     (d.whoisDates&&d.whoisDates.expiry?
@@ -6404,7 +6432,7 @@ function generateTargetPDF(){
 
     '<div class="subsection"><div class="sub-title">Certificado SSL/TLS</div>'+
     '<table class="kv">'+
-    kv('CN', d.sslCN||'—')+
+    kv('CN', d.sslCN||(d.subs&&d.subs.length?'Ver SANs de subdominios':'Sin certificado en CT logs'))+
     kv('Issuer', (d.sslIssuer||'—').substring(0,80))+
     kv('Válido desde', d.sslNotBefore||'—')+
     kv('Expira', (d.sslNotAfter||'—')+(d.sslDays!==undefined?' ('+d.sslDays+' días)':''),
