@@ -7607,9 +7607,9 @@ function generateTargetPDF(mode){
     var cveHigh=(d.cveDetails||[]).filter(function(x){var s=parseFloat(x.cvss3||x.cvss||0);return s>=7;}).length;
     var cveMed=(d.cveDetails||[]).filter(function(x){var s=parseFloat(x.cvss3||x.cvss||0);return s>=4&&s<7;}).length;
     var cveTotalCount=(d.cves||[]).length;
-    var riskSemaphore=exposure>=70?'🔴 RIESGO ALTO':exposure>=40?'🟡 RIESGO MEDIO':'🟢 RIESGO BAJO';
-    var riskBg=exposure>=70?'#fee2e2':exposure>=40?'#fef9c3':'#dcfce7';
-    var riskBorder=exposure>=70?'#ef4444':exposure>=40?'#eab308':'#22c55e';
+    var riskSemaphore=exposure>=80?'🔴 RIESGO CRÍTICO':exposure>=60?'🟠 RIESGO ALTO':exposure>=30?'🟡 RIESGO MEDIO':'🟢 RIESGO BAJO';
+    var riskBg=exposure>=80?'#fee2e2':exposure>=60?'#fff7ed':exposure>=30?'#fef9c3':'#dcfce7';
+    var riskBorder=exposure>=80?'#ef4444':exposure>=60?'#f97316':exposure>=30?'#eab308':'#22c55e';
 
     var execF1 = '<div class="page">' +
       '<div class="phase-header"><span class="phase-num">01</span><span class="phase-icon">🔍</span><span class="phase-title">CONFIGURACIÓN DE DOMINIO</span></div>'+
@@ -7705,7 +7705,50 @@ function generateTargetPDF(mode){
         '<button class="btn btn-c" onclick="window.close()">✕ Cerrar</button>'+
         '<button class="btn btn-p" onclick="window.print()">⬇ Descargar PDF</button>'+
       '</div>'+
-      coverHtml+disclaimerHtml+tocHtml+execF1+execF2+execF3+execSummary+
+      (function(){
+        // Exec-mode portada corporativa (inline, no depende de vars de modo técnico)
+        var ecover=
+          '<div class="cover" style="background:#1c3a5c;color:#fff;">'+
+          '<div class="cover-logo" style="font-family:Arial,sans-serif;color:#fff;font-size:2.2rem;font-weight:900;letter-spacing:2px;">'+eh(domain)+'</div>'+
+          '<div class="cover-sub" style="color:rgba(255,255,255,.6);letter-spacing:3px;font-size:.75rem;margin-top:8px;">REPORTE EJECUTIVO DE SEGURIDAD</div>'+
+          '<hr class="cover-rule" style="border-color:rgba(255,255,255,.2);margin:24px 0;">'+
+          '<div class="cover-meta" style="display:grid;grid-template-columns:1fr 1fr;gap:12px 24px;font-size:.8rem;">'+
+            '<div class="cover-meta-item"><label style="color:rgba(255,255,255,.5)">Dominio</label><span style="color:#fff;font-weight:700;">'+eh(domain)+'</span></div>'+
+            '<div class="cover-meta-item"><label style="color:rgba(255,255,255,.5)">Fecha</label><span style="color:#fff;">'+eh(dateStr)+'</span></div>'+
+            '<div class="cover-meta-item"><label style="color:rgba(255,255,255,.5)">Analista</label><span style="color:#fff;">Luis Gastelum _Y000!_</span></div>'+
+            '<div class="cover-meta-item"><label style="color:rgba(255,255,255,.5)">Clasificación</label><span style="color:#ff9999;font-weight:700;">CONFIDENCIAL</span></div>'+
+          '</div>'+
+          '<div class="cover-score-box" style="margin-top:32px;background:rgba(255,255,255,.08);border-radius:8px;padding:20px 24px;display:flex;gap:24px;align-items:center;">'+
+            '<div><div style="font-size:.65rem;color:rgba(255,255,255,.5);letter-spacing:2px;">EXPOSURE SCORE</div>'+
+            '<div style="font-size:3rem;font-weight:900;color:'+expHex+';">'+exposure+'<span style="font-size:1.2rem;color:rgba(255,255,255,.3)">/100</span></div></div>'+
+            '<div><div style="font-size:1.1rem;font-weight:700;color:'+expHex+';">'+expLabel+'</div>'+
+            '<div style="font-size:.72rem;color:rgba(255,255,255,.5);margin-top:4px;">'+
+              (d.cveDetails&&d.cveDetails.length?d.cveDetails.filter(function(v){return parseFloat(v.cvss3||v.cvss||0)>=9}).length+' CVEs críticos · ':'')+
+              (d.cves&&d.cves.length?d.cves.length+' CVEs totales · ':'')+
+              (d.ports&&d.ports.length?d.ports.length+' puertos':'')+'</div>'+
+            '</div>'+
+          '</div>'+
+          '<div class="cover-footer" style="position:absolute;bottom:32px;left:40px;right:40px;display:flex;justify-content:space-between;font-size:.6rem;color:rgba(255,255,255,.3);">'+
+            '<span>y000o.github.io</span><span>'+eh(domain)+'</span><span>'+eh(dateStr)+'</span>'+
+          '</div>'+
+          '</div>';
+        var ediscl=
+          '<div class="disclaimer-page">'+
+          '<h1 style="color:#1c3a5c;">Aviso Legal y Confidencialidad</h1>'+
+          '<p><strong>Autor:</strong> Luis Alberto Gastelum Madero (_Y000!_) — ISO 27001 Lead Auditor. Hall of Fame CEPAL/ONU.</p>'+
+          '<p><strong>Alcance:</strong> Reconocimiento pasivo (OSINT). Sin acceso no autorizado ni tráfico activo hacia sistemas objetivo.</p>'+
+          '<p><strong>Uso autorizado:</strong> Exclusivamente para el propietario legítimo del dominio, personal de seguridad autorizado, o auditorías con consentimiento escrito previo.</p>'+
+          '<div class="warn-box" style="background:#fef9c3;border-left:4px solid #eab308;padding:12px 16px;margin-top:16px;"><strong>⚠ DOCUMENTO CONFIDENCIAL.</strong> Distribución no autorizada está prohibida.</div>'+
+          '</div>';
+        var etoc=
+          '<div class="toc-page"><h1 style="color:#1c3a5c;letter-spacing:0;">Índice de Contenidos</h1>'+
+          '<div class="toc-item"><span class="toc-num">1.</span><span class="toc-title">Configuración de Dominio</span><span class="toc-dots"></span></div>'+
+          '<div class="toc-item"><span class="toc-num">2.</span><span class="toc-title">Vulnerabilidades e Infraestructura</span><span class="toc-dots"></span></div>'+
+          '<div class="toc-item"><span class="toc-num">3.</span><span class="toc-title">Análisis de Amenazas</span><span class="toc-dots"></span></div>'+
+          '<div class="toc-item"><span class="toc-num">4.</span><span class="toc-title">Resumen Ejecutivo y Plan de Acción</span><span class="toc-dots"></span></div>'+
+          '</div>';
+        return ecover+ediscl+etoc;
+      })()+execF1+execF2+execF3+execSummary+
       '</body></html>';
 
     var w=window.open('','_blank','width=960,height=800');
