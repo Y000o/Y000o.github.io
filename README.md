@@ -399,3 +399,5 @@ Cards con categorización visual por emisor:
 | ✉️ Email | luis_gastelum_11@hotmail.com |
 
 ---
+
+![](https://komarev.com/ghpvc/?username=Y000o&color=00ff41&style=flat-square&label=PROFILE+VIEWS)
