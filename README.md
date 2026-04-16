@@ -1,4 +1,4 @@
-# _Y000!_ — Hacker Portfolio
+# _Y000!_ — Hacker Portfolio  ![](https://komarev.com/ghpvc/?username=Y000o&color=00ff41&style=flat-square&label=PROFILE+VIEWS)
 ### Luis Alberto Gastelum Madero · Security Researcher · Bug Hunter · ISO 27001 Auditor
 
 > **🔗 Live → [y000o.github.io](https://y000o.github.io)**
@@ -400,4 +400,4 @@ Cards con categorización visual por emisor:
 
 ---
 
-![](https://komarev.com/ghpvc/?username=Y000o&color=00ff41&style=flat-square&label=PROFILE+VIEWS)
+
