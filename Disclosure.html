@@ -1,0 +1,560 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>_Y000!_ Disclosures</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@400;500;600;700&display=swap">
+
+<style>
+/* ── tokens ── dark terminal aesthetic, cyan/green on near-black */
+:root {
+  --bg:       #0a0c0f;
+  --bg2:      #0f1318;
+  --bg3:      #151b22;
+  --border:   #1e2a36;
+  --fg:       #c9d1d9;
+  --fg2:      #8b949e;
+  --accent:   #39d353;
+  --cyan:     #58a6ff;
+  --yellow:   #e3b341;
+  --red:      #f85149;
+  --orange:   #d29922;
+  --mono:     'Share Tech Mono', monospace;
+  --sans:     'Inter', system-ui, sans-serif;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg:     #f0f4f8;
+    --bg2:    #ffffff;
+    --bg3:    #e8edf2;
+    --border: #c8d3dc;
+    --fg:     #1c2128;
+    --fg2:    #57606a;
+    --accent: #1a7f37;
+    --cyan:   #0969da;
+    color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg:     #f0f4f8;
+  --bg2:    #ffffff;
+  --bg3:    #e8edf2;
+  --border: #c8d3dc;
+  --fg:     #1c2128;
+  --fg2:    #57606a;
+  --accent: #1a7f37;
+  --cyan:   #0969da;
+  color-scheme: light;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px;
+}
+
+/* ── header ── */
+.header {
+  max-width: 860px;
+  margin: 0 auto 48px;
+}
+
+.prompt-line {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--fg2);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.prompt-line::before {
+  content: '';
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent);
+}
+
+h1 {
+  font-family: var(--mono);
+  font-size: clamp(24px, 5vw, 38px);
+  font-weight: 400;
+  color: var(--accent);
+  text-shadow: 0 0 20px color-mix(in srgb, var(--accent) 40%, transparent);
+  letter-spacing: -0.5px;
+  margin-bottom: 8px;
+  text-wrap: balance;
+}
+
+.subtitle {
+  font-size: 15px;
+  color: var(--fg2);
+  font-family: var(--mono);
+}
+
+/* ── stats row ── */
+.stats {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 32px 0 0;
+}
+
+.stat {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 20px;
+  flex: 1;
+  min-width: 120px;
+}
+.stat-num {
+  font-family: var(--mono);
+  font-size: 28px;
+  color: var(--accent);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.stat-label {
+  font-size: 11px;
+  color: var(--fg2);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  margin-top: 4px;
+}
+
+/* ── section title ── */
+.section-title {
+  max-width: 860px;
+  margin: 0 auto 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--fg2);
+  text-transform: uppercase;
+  letter-spacing: .1em;
+}
+.section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── cards ── */
+.cards {
+  max-width: 860px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--border);
+  border-radius: 8px;
+  padding: 20px 22px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px 16px;
+  transition: border-color .15s;
+}
+.card:hover { border-left-color: var(--accent); }
+.card.critical { border-left-color: var(--red); }
+.card.high     { border-left-color: var(--orange); }
+.card.medium   { border-left-color: var(--yellow); }
+.card.resolved { border-left-color: var(--accent); }
+.card.escalated{ border-left-color: var(--cyan); }
+
+.card-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.org {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--fg);
+  flex: 1;
+  min-width: 0;
+}
+
+.badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+  grid-column: 1 / -1;
+}
+
+.badge {
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  white-space: nowrap;
+}
+.badge-critical { background: color-mix(in srgb, var(--red) 15%, transparent);    color: var(--red);    border: 1px solid color-mix(in srgb, var(--red) 30%, transparent); }
+.badge-high     { background: color-mix(in srgb, var(--orange) 15%, transparent); color: var(--orange); border: 1px solid color-mix(in srgb, var(--orange) 30%, transparent); }
+.badge-medium   { background: color-mix(in srgb, var(--yellow) 15%, transparent); color: var(--yellow); border: 1px solid color-mix(in srgb, var(--yellow) 30%, transparent); }
+.badge-type     { background: var(--bg3); color: var(--fg2); border: 1px solid var(--border); }
+.badge-status-ok   { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent); }
+.badge-status-esc  { background: color-mix(in srgb, var(--cyan) 12%, transparent);   color: var(--cyan);   border: 1px solid color-mix(in srgb, var(--cyan) 25%, transparent); }
+.badge-status-pend { background: color-mix(in srgb, var(--yellow) 10%, transparent); color: var(--yellow); border: 1px solid color-mix(in srgb, var(--yellow) 20%, transparent); }
+.badge-flag { background: none; border: none; font-size: 14px; padding: 0; }
+
+.card-desc {
+  font-size: 13px;
+  color: var(--fg2);
+  grid-column: 1 / -1;
+  line-height: 1.5;
+}
+
+.card-meta {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--fg2);
+  white-space: nowrap;
+  text-align: right;
+  align-self: start;
+}
+
+/* ── footer ── */
+.footer {
+  max-width: 860px;
+  margin: 56px auto 0;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.footer-handle {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--accent);
+}
+.footer-note {
+  font-size: 12px;
+  color: var(--fg2);
+  font-family: var(--mono);
+}
+</style>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="prompt-line">_Y000!_ @ responsible-disclosure ~ $</div>
+  <h1>Responsible Disclosure</h1>
+  <div class="subtitle">// passive recon → confirm → report → remediation</div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-num">158</div>
+      <div class="stat-label">Vulnerabilities fixed</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">4</div>
+      <div class="stat-label">UN Hall of Fame</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">9+</div>
+      <div class="stat-label">Organizations</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">4</div>
+      <div class="stat-label">Countries</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">$150</div>
+      <div class="stat-label">Bounty earned</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">41</div>
+      <div class="stat-label">Articles published</div>
+    </div>
+  </div>
+</div>
+
+<!-- CARDS -->
+<div class="section-title">// timeline</div>
+
+<div class="cards">
+
+  <!-- CEPAL -->
+  <div class="card resolved">
+    <div class="card-top">
+      <div class="org">CEPAL — United Nations Economic Commission for Latin America</div>
+      <div class="card-meta">2022 – 2026</div>
+    </div>
+    <div class="badges">
+      <span class="badge badge-flag">🇨🇱</span>
+      <span class="badge badge-critical">Critical</span>
+      <span class="badge badge-high">High</span>
+      <span class="badge badge-type">GitLab CE</span>
+      <span class="badge badge-type">DMARC</span>
+      <span class="badge badge-type">DSpace</span>
+      <span class="badge badge-type">Drupal</span>
+      <span class="badge badge-status-ok">✓ 4× Hall of Fame</span>
+    </div>
+    <div class="card-desc">Multiple vulnerability disclosures across CEPAL's digital infrastructure, including a critical GitLab Community Edition exposure and email security misconfiguration. Recognized four times in the UN ICT Security Hall of Fame.</div>
+  </div>
+
+  <!-- Harvard / DFCI SQLi -->
+  <div class="card escalated">
+    <div class="card-top">
+      <div class="org">Dana-Farber Cancer Institute — Harvard Medical School</div>
+      <div class="card-meta">2020 – 2026</div>
+    </div>
+    <div class="badges">
+      <span class="badge badge-flag">🇺🇸</span>
+      <span class="badge badge-critical">CVSS 9.8 Critical</span>
+      <span class="badge badge-type">SQL Injection</span>
+      <span class="badge badge-type">CWE-89</span>
+      <span class="badge badge-type">HIPAA risk</span>
+      <span class="badge badge-status-esc">⬆ Escalated to CISA</span>
+    </div>
+    <div class="card-desc">Error-based SQL injection (MySQL GTID_SUBSET) in oncology research portal. First reported September 2020 with full PoC; follow-ups in Oct 2020, Feb 2021, May 2021. No remediation after 6 years — escalated to CISA IRT (U.S. DHS) in October 2026.</div>
+  </div>
+
+  <!-- DFCI FTP -->
+  <div class="card escalated">
+    <div class="card-top">
+      <div class="org">Dana-Farber Cancer Institute — FTP Infrastructure</div>
+      <div class="card-meta">2026</div>
+    </div>
+    <div class="badges">
+      <span class="badge badge-flag">🇺🇸</span>
+      <span class="badge badge-high">CVSS 8.6 High</span>
+      <span class="badge badge-type">Anonymous FTP</span>
+      <span class="badge badge-type">CWE-284</span>
+      <span class="badge badge-type">CWE-319</span>
+      <span class="badge badge-status-esc">⬆ Escalated to CISA</span>
+    </div>
+    <div class="card-desc">FTP server exposed on public internet with anonymous login enabled — no credentials required. Cleartext protocol with full read/write commands advertised. Identified via passive Shodan reconnaissance. Reported to CISA IRT alongside the SQLi disclosure.</div>
+  </div>
+
+  <!-- UAM-X -->
+  <div class="card resolved">
+    <div class="card-top">
+      <div class="org">Universidad Autónoma Metropolitana — UAM-X</div>
+      <div class="card-meta">2021</div>
+    </div>
+    <div class="badges">
+      <span class="badge badge-flag">🇲🇽</span>
+      <span class="badge badge-critical">Critical</span>
+      <span class="badge badge-high">High</span>
+      <span class="badge badge-type">SQL Injection</span>
+      <span class="badge badge-type">XSS ×4</span>
+      <span class="badge badge-type">HTML Injection</span>
+      <span class="badge badge-status-ok">✓ Patched same day</span>
+    </div>
+    <div class="card-desc">Multiple vulnerabilities across csu.azu.uam.mx, publicaciones.xoc.uam.mx and libreria.xoc.uam.mx — including SQL injection and four cross-site scripting instances. Requested permission before reporting. Remediated within hours. Ongoing advisory relationship established with web administration team.</div>
+  </div>
+
+  <!-- SEMARNAT -->
+  <div class="card resolved">
+    <div class="card-top">
+      <div class="org">SEMARNAT — Secretaría de Medio Ambiente y Recursos Naturales</div>
+      <div class="card-meta">2021</div>
+    </div>
+    <div class="badges">
+      <span class="badge badge-flag">🇲🇽</span>
+      <span class="badge badge-type">Web Vulnerability</span>
+      <span class="badge badge-status-ok">✓ Patched</span>
+    </div>
+    <div class="card-desc">Vulnerability identified and reported to Mexico's federal environmental agency. Remediated. Developer maintains direct communication channel for ongoing security consultation.</div>
+  </div>
+
+  <!-- Universidad de Colombia -->
+  <div class="card resolved">
+    <div class="card-top">
+      <div class="org">Universidad — Colombia</div>
+      <div class="card-meta">2021 – present</div>
+    </div>
+    <div class="badges">
+      <span class="badge badge-flag">🇨🇴</span>
+      <span class="badge badge-type">Web Vulnerability</span>
+      <span class="badge badge-status-ok">✓ Patched</span>
+    </div>
+    <div class="card-desc">Responsible disclosure to Colombian university. Vulnerability remediated. Institution granted ongoing authorization to review new developments prior to production deployment.</div>
+  </div>
+
+</div>
+
+<!-- BUG BOUNTY SECTION -->
+<div class="section-title" style="margin-top:40px;">// bug bounty — hackerone</div>
+
+<div class="cards">
+
+  <!-- Slack -->
+  <div class="card resolved">
+    <div class="card-top">
+      <div class="org">Slack</div>
+      <div class="card-meta">~2020</div>
+    </div>
+    <div class="badges">
+      <span class="badge badge-flag">🇺🇸</span>
+      <span class="badge badge-high">High</span>
+      <span class="badge badge-type">Reflected XSS</span>
+      <span class="badge badge-type">CWE-79</span>
+      <span class="badge badge-status-ok">✓ Resolved · $150</span>
+    </div>
+    <div class="card-desc">Reflected Cross-Site Scripting in Slack's search functionality. Reported via HackerOne; resolved by Slack security team. Earned $150 bounty — program later acquired by Salesforce.</div>
+  </div>
+
+  <!-- American Airlines -->
+  <div class="card resolved">
+    <div class="card-top">
+      <div class="org">American Airlines</div>
+      <div class="card-meta">~2021</div>
+    </div>
+    <div class="badges">
+      <span class="badge badge-flag">🇺🇸</span>
+      <span class="badge badge-high">High</span>
+      <span class="badge badge-type">Reflected XSS</span>
+      <span class="badge badge-type">CWE-79</span>
+      <span class="badge badge-status-ok">✓ Resolved</span>
+    </div>
+    <div class="card-desc">Reflected XSS on magazines.aa.com via the <code style="font-family:var(--mono);font-size:11px;background:var(--bg3);padding:1px 5px;border-radius:3px;">date_out</code> and <code style="font-family:var(--mono);font-size:11px;background:var(--bg3);padding:1px 5px;border-radius:3px;">date_in</code> query parameters. Reported via HackerOne; resolved by the American Airlines security team.</div>
+  </div>
+
+  <!-- Myndr -->
+  <div class="card resolved">
+    <div class="card-top">
+      <div class="org">Myndr</div>
+      <div class="card-meta">~2020</div>
+    </div>
+    <div class="badges">
+      <span class="badge badge-type">URL Injection</span>
+      <span class="badge badge-type">Open Redirect</span>
+      <span class="badge badge-status-ok">✓ Resolved</span>
+    </div>
+    <div class="card-desc">URL injection vulnerability on blocked.myndr.net allowing redirect to attacker-controlled domains. Reported via HackerOne; resolved by the Myndr team.</div>
+  </div>
+
+</div>
+
+<!-- WRITING SECTION -->
+<div class="section-title" style="margin-top:40px;">// writing &amp; research — medium</div>
+
+<div class="cards">
+
+  <div class="card" style="border-left-color:var(--cyan);">
+    <div class="card-top">
+      <div class="org">Technical Writing on Medium</div>
+      <div class="card-meta">2020 – 2023</div>
+    </div>
+    <div class="badges">
+      <span class="badge badge-type">SQL Injection</span>
+      <span class="badge badge-type">XSS</span>
+      <span class="badge badge-type">Recon</span>
+      <span class="badge badge-type">WAF Bypass</span>
+      <span class="badge badge-type">Android</span>
+      <span class="badge badge-type">AI &amp; Security</span>
+      <span class="badge" style="background:color-mix(in srgb,var(--cyan) 12%,transparent);color:var(--cyan);border:1px solid color-mix(in srgb,var(--cyan) 25%,transparent);">InfoSec Write-ups &#10003;</span>
+      <span class="badge" style="background:color-mix(in srgb,var(--cyan) 12%,transparent);color:var(--cyan);border:1px solid color-mix(in srgb,var(--cyan) 25%,transparent);">Nerd For Tech &#10003;</span>
+    </div>
+    <div class="card-desc">41 published articles in English and Spanish covering offensive security techniques — SQL injection series (basic to MSSQL/WAF bypass), XSS from zero, Google Dorking, subdomain discovery tooling, Android pentesting, and malware analysis. Multiple articles accepted into curated publications <em>InfoSec Write-ups</em> and <em>Nerd For Tech</em>.</div>
+  </div>
+
+</div>
+
+<!-- TOP ARTICLES -->
+<div class="section-title" style="margin-top:24px;">// featured articles</div>
+<div class="cards">
+
+  <div class="card" style="padding:14px 22px;">
+    <div class="card-top">
+      <div class="org" style="font-size:13px;">Some tips for SQL injections</div>
+      <div class="card-meta">197 reads</div>
+    </div>
+    <div class="badges">
+      <span class="badge badge-type">SQL Injection</span>
+      <span class="badge" style="background:color-mix(in srgb,var(--cyan) 12%,transparent);color:var(--cyan);border:1px solid color-mix(in srgb,var(--cyan) 25%,transparent);">Nerd For Tech</span>
+    </div>
+  </div>
+
+  <div class="card" style="padding:14px 22px;">
+    <div class="card-top">
+      <div class="org" style="font-size:13px;">Fun SQL Injection — mod_security bypass</div>
+      <div class="card-meta">165 reads</div>
+    </div>
+    <div class="badges">
+      <span class="badge badge-type">WAF Bypass</span>
+      <span class="badge" style="background:color-mix(in srgb,var(--cyan) 12%,transparent);color:var(--cyan);border:1px solid color-mix(in srgb,var(--cyan) 25%,transparent);">InfoSec Write-ups</span>
+    </div>
+  </div>
+
+  <div class="card" style="padding:14px 22px;">
+    <div class="card-top">
+      <div class="org" style="font-size:13px;">XSS from 0! All you need to know!</div>
+      <div class="card-meta">141 reads</div>
+    </div>
+    <div class="badges">
+      <span class="badge badge-type">XSS</span>
+      <span class="badge" style="background:color-mix(in srgb,var(--cyan) 12%,transparent);color:var(--cyan);border:1px solid color-mix(in srgb,var(--cyan) 25%,transparent);">Nerd For Tech</span>
+    </div>
+  </div>
+
+  <div class="card" style="padding:14px 22px;">
+    <div class="card-top">
+      <div class="org" style="font-size:13px;">Hacking tools for your cell phone</div>
+      <div class="card-meta">137 reads</div>
+    </div>
+    <div class="badges">
+      <span class="badge badge-type">Android</span>
+      <span class="badge badge-type">Recon</span>
+      <span class="badge" style="background:color-mix(in srgb,var(--cyan) 12%,transparent);color:var(--cyan);border:1px solid color-mix(in srgb,var(--cyan) 25%,transparent);">Nerd For Tech</span>
+    </div>
+  </div>
+
+  <div class="card" style="padding:14px 22px;">
+    <div class="card-top">
+      <div class="org" style="font-size:13px;">Understanding XPath Injection with practical examples</div>
+      <div class="card-meta">100 reads</div>
+    </div>
+    <div class="badges">
+      <span class="badge badge-type">XPath Injection</span>
+      <span class="badge" style="background:color-mix(in srgb,var(--cyan) 12%,transparent);color:var(--cyan);border:1px solid color-mix(in srgb,var(--cyan) 25%,transparent);">InfoSec Write-ups</span>
+    </div>
+  </div>
+
+  <div class="card" style="padding:14px 22px;">
+    <div class="card-top">
+      <div class="org" style="font-size:13px;">How to discover up to 10,000 subdomains with your own tool</div>
+      <div class="card-meta">159 reads</div>
+    </div>
+    <div class="badges">
+      <span class="badge badge-type">Recon</span>
+      <span class="badge badge-type">Tooling</span>
+      <span class="badge" style="background:color-mix(in srgb,var(--cyan) 12%,transparent);color:var(--cyan);border:1px solid color-mix(in srgb,var(--cyan) 25%,transparent);">InfoSec Write-ups</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div class="footer-handle">_Y000!_ / Luis Gastelum &nbsp;·&nbsp; <a href="https://www.openbugbounty.org/researchers/_Y000_/" target="_blank" style="color:var(--accent);text-decoration:none;">openbugbounty.org/researchers/_Y000_</a> &nbsp;·&nbsp; <a href="https://hackerone.com/ly000l" target="_blank" style="color:var(--accent);text-decoration:none;">hackerone.com/ly000l</a></div>
+  <div class="footer-note">// passive recon only · no data extracted · good faith disclosure</div>
+</div>
+
+</body></html>
